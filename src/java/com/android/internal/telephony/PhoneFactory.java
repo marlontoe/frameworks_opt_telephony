@@ -19,10 +19,11 @@ package com.android.internal.telephony;
 import android.content.Context;
 import android.net.LocalServerSocket;
 import android.os.Looper;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.telephony.Rlog;
-import android.os.SystemProperties;
+import android.util.Log;
 
 import com.android.internal.telephony.cdma.CDMAPhone;
 import com.android.internal.telephony.cdma.CDMALTEPhone;
@@ -140,7 +141,7 @@ public class PhoneFactory {
 
                 //reads the system properties and makes commandsinterface
                 String sRILClassname = SystemProperties.get("ro.telephony.ril_class", "RIL");
-                Log.i(LOG_TAG, "RILClassname is " + sRILClassname);
+                Rlog.i(LOG_TAG, "RILClassname is " + sRILClassname);
 
                 // Use reflection to construct the RIL class (defaults to RIL)
                 try {

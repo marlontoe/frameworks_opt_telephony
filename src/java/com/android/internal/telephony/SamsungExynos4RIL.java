@@ -317,8 +317,8 @@ public class SamsungExynos4RIL extends RIL implements CommandsInterface {
         long removalTime = System.currentTimeMillis();
         long timeDiff = 0;
 
-        synchronized (mRequestsList) {
-          Iterator<RILRequest> itr = mRequestsList.iterator();
+        synchronized (mRequestList) {
+          Iterator<RILRequest> itr = mRequestList.iterator();
 
             while ( itr.hasNext() ) {
                 RILRequest rr = itr.next();

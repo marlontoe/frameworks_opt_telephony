@@ -34,6 +34,8 @@ import android.util.Log;
 import com.android.internal.telephony.RILConstants;
 import com.android.internal.telephony.gsm.SmsBroadcastConfigInfo;
 import com.android.internal.telephony.cdma.CdmaInformationRecords;
+import com.android.internal.telephony.uicc.IccCardApplicationStatus; 
+import com.android.internal.telephony.uicc.IccCardStatus; 
 
 import java.util.ArrayList;
 
