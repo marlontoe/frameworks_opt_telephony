@@ -28,8 +28,8 @@ import android.telephony.SignalStrength;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.android.internal.telephony.IccCardApplicationStatus;
-import com.android.internal.telephony.IccCardStatus;
+import com.android.internal.telephony.uicc.IccCardApplicationStatus; 
+import com.android.internal.telephony.uicc.IccCardStatus;
 
 import java.util.ArrayList;
 
