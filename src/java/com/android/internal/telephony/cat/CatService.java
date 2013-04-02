@@ -26,12 +26,12 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.os.SystemProperties;
 
-import com.android.internal.telephony.IccUtils;
 import com.android.internal.telephony.CommandsInterface;
-import com.android.internal.telephony.IccFileHandler;
-import com.android.internal.telephony.IccRecords;
-import com.android.internal.telephony.UiccCard;
-import com.android.internal.telephony.UiccCardApplication;
+import com.android.internal.telephony.uicc.IccFileHandler;
+import com.android.internal.telephony.uicc.IccRecords;
+import com.android.internal.telephony.uicc.IccUtils;
+import com.android.internal.telephony.uicc.UiccCard;
+import com.android.internal.telephony.uicc.UiccCardApplication;
 
 
 import java.io.ByteArrayOutputStream;
@@ -800,6 +800,7 @@ public class CatService extends Handler implements AppInterface {
         ResponseData resp = null;
         boolean helpRequired = false;
         CommandDetails cmdDet = resMsg.getCmdDetails();
+        AppInterface.CommandType type = AppInterface.CommandType.fromInt(cmdDet.typeOfCommand);
 
         switch (resMsg.resCode) {
         case HELP_INFO_REQUIRED:
@@ -815,7 +816,8 @@ public class CatService extends Handler implements AppInterface {
         case PRFRMD_WITH_MODIFICATION:
         case PRFRMD_NAA_NOT_ACTIVE:
         case PRFRMD_TONE_NOT_PLAYED:
-            switch (AppInterface.CommandType.fromInt(cmdDet.typeOfCommand)) {
+        case TERMINAL_CRNTLY_UNABLE_TO_PROCESS:
+            switch (type) {
             case SET_UP_MENU:
                 helpRequired = resMsg.resCode == ResultCode.HELP_INFO_REQUIRED;
                 sendMenuSelection(resMsg.usersMenuSelection, helpRequired);
@@ -850,16 +852,29 @@ public class CatService extends Handler implements AppInterface {
                 return;
             }
             break;
-        case NO_RESPONSE_FROM_USER:
-        case UICC_SESSION_TERM_BY_USER:
         case BACKWARD_MOVE_BY_USER:
         case USER_NOT_ACCEPT:
+            // if the user dismissed the alert dialog for a
+            // setup call/open channel, consider that as the user
+            // rejecting the call. Use dedicated API for this, rather than
+            // sending a terminal response.
+            if (type == CommandType.SET_UP_CALL || type == CommandType.OPEN_CHANNEL) {
+                mCmdIf.handleCallSetupRequestFromSim(false, null);
+                mCurrntCmd = null;
+                return;
+            } else {
+                resp = null;
+            }
+            break;
+        case NO_RESPONSE_FROM_USER:
+        case UICC_SESSION_TERM_BY_USER:
             resp = null;
             break;
         default:
             return;
         }
-        sendTerminalResponse(cmdDet, resMsg.resCode, false, 0, resp);
+        sendTerminalResponse(cmdDet, resMsg.resCode, resMsg.includeAdditionalInfo,
+                resMsg.additionalInfo, resp);
         mCurrntCmd = null;
     }
 

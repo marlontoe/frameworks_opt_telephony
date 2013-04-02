@@ -22,7 +22,7 @@ import android.os.Handler;
 import android.os.Message;
 
 import com.android.internal.telephony.GsmAlphabet;
-import com.android.internal.telephony.IccFileHandler;
+import com.android.internal.telephony.uicc.IccFileHandler;
 
 import java.util.Iterator;
 import java.util.List;
@@ -125,6 +125,13 @@ class CommandParamsFactory extends Handler {
             return;
         }
 
+        // proactive command length is incorrect.
+        if (!berTlv.isLengthValid()) {
+            mCmdParams = new CommandParams(cmdDet);
+            sendCmdParams(ResultCode.CMD_DATA_NOT_UNDERSTOOD);
+            return;
+        }
+
         try {
             switch (cmdType) {
             case SET_UP_MENU:
@@ -151,6 +158,7 @@ class CommandParamsFactory extends Handler {
              case SEND_USSD:
                  cmdPending = processEventNotify(cmdDet, ctlvs);
                  break;
+             case GET_CHANNEL_STATUS:
              case SET_UP_CALL:
                  cmdPending = processSetupCall(cmdDet, ctlvs);
                  break;

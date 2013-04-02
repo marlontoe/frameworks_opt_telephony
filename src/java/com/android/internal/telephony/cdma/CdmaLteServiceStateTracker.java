@@ -37,11 +37,12 @@ import android.os.SystemClock;
 import android.os.SystemProperties;
 
 import android.text.TextUtils;
-import android.util.Log;
+import android.telephony.Rlog;
 import android.util.EventLog;
 
-import com.android.internal.telephony.IccCardApplicationStatus.AppState;
 import com.android.internal.telephony.gsm.GsmDataConnectionTracker;
+import com.android.internal.telephony.uicc.RuimRecords;
+import com.android.internal.telephony.uicc.IccCardApplicationStatus.AppState;
 import com.android.internal.telephony.IccCardConstants;
 
 import java.io.FileDescriptor;
@@ -567,13 +568,11 @@ public class CdmaLteServiceStateTracker extends CdmaServiceStateTracker {
     @Override
     public boolean isConcurrentVoiceAndDataAllowed() {
         // For non-LTE, look at the CSS indicator to check on SV capability
-        if (mRilRadioTechnology == ServiceState.RIL_RADIO_TECHNOLOGY_LTE)
+        if (mRilRadioTechnology == ServiceState.RIL_RADIO_TECHNOLOGY_LTE) {
             return true;
-        else if ((getSVDO) && (mLteSS.getRadioTechnology() !=
-                    ServiceState.RIL_RADIO_TECHNOLOGY_1xRTT))
-            return true;
-        else
+        } else {
             return ss.getCssIndicator() == 1;
+        }
     }
 
     /**
@@ -620,12 +619,12 @@ public class CdmaLteServiceStateTracker extends CdmaServiceStateTracker {
 
     @Override
     protected void log(String s) {
-        Log.d(LOG_TAG, "[CdmaLteSST] " + s);
+        Rlog.d(LOG_TAG, "[CdmaLteSST] " + s);
     }
 
     @Override
     protected void loge(String s) {
-        Log.e(LOG_TAG, "[CdmaLteSST] " + s);
+        Rlog.e(LOG_TAG, "[CdmaLteSST] " + s);
     }
 
     @Override

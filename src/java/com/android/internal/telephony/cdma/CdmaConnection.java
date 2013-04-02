@@ -25,18 +25,15 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.os.Registrant;
 import android.os.SystemClock;
-import android.os.SystemProperties;
-import android.util.Log;
+import android.telephony.Rlog;
 import android.text.TextUtils;
 
 import android.telephony.PhoneNumberUtils;
 import android.telephony.ServiceState;
 
-import com.android.internal.telephony.IccCardApplicationStatus.AppState;
-import com.android.internal.telephony.TelephonyProperties;
-import com.android.internal.telephony.RILConstants;
-import com.android.internal.telephony.UiccCardApplication;
+import com.android.internal.telephony.uicc.UiccCardApplication;
 import com.android.internal.telephony.uicc.UiccController;
+import com.android.internal.telephony.uicc.IccCardApplicationStatus.AppState;
 
 /**
  * {@hide}
@@ -152,9 +149,9 @@ public class CdmaConnection extends Connection {
         h = new MyHandler(owner.getLooper());
 
         this.dialString = dialString;
-        Log.d(LOG_TAG, "[CDMAConn] CdmaConnection: dialString=" + dialString);
+        Rlog.d(LOG_TAG, "[CDMAConn] CdmaConnection: dialString=" + dialString);
         dialString = formatDialString(dialString);
-        Log.d(LOG_TAG, "[CDMAConn] CdmaConnection:formated dialString=" + dialString);
+        Rlog.d(LOG_TAG, "[CDMAConn] CdmaConnection:formated dialString=" + dialString);
 
         this.address = PhoneNumberUtils.extractNetworkPortionAlt(dialString);
         this.postDialString = PhoneNumberUtils.extractPostDialPortion(dialString);
@@ -305,7 +302,7 @@ public class CdmaConnection extends Connection {
 
     public void proceedAfterWaitChar() {
         if (postDialState != PostDialState.WAIT) {
-            Log.w(LOG_TAG, "CdmaConnection.proceedAfterWaitChar(): Expected "
+            Rlog.w(LOG_TAG, "CdmaConnection.proceedAfterWaitChar(): Expected "
                 + "getPostDialState() to be WAIT but was " + postDialState);
             return;
         }
@@ -317,7 +314,7 @@ public class CdmaConnection extends Connection {
 
     public void proceedAfterWildChar(String str) {
         if (postDialState != PostDialState.WILD) {
-            Log.w(LOG_TAG, "CdmaConnection.proceedAfterWaitChar(): Expected "
+            Rlog.w(LOG_TAG, "CdmaConnection.proceedAfterWaitChar(): Expected "
                 + "getPostDialState() to be WILD but was " + postDialState);
             return;
         }
@@ -419,10 +416,10 @@ public class CdmaConnection extends Connection {
             default:
                 CDMAPhone phone = owner.phone;
                 int serviceState = phone.getServiceState().getState();
-                UiccCardApplication uiccCardApplication = UiccController.getInstance()
-                    .getUiccCardApplication(UiccController.APP_FAM_3GPP2);
-                AppState uiccAppState = uiccCardApplication != null
-                    ? uiccCardApplication.getState() : null;
+                UiccCardApplication app = UiccController
+                        .getInstance()
+                        .getUiccCardApplication(UiccController.APP_FAM_3GPP2);
+                AppState uiccAppState = (app != null) ? app.getState() : AppState.APPSTATE_UNKNOWN;
                 if (serviceState == ServiceState.STATE_POWER_OFF) {
                     return DisconnectCause.POWER_OFF;
                 } else if (serviceState == ServiceState.STATE_OUT_OF_SERVICE
@@ -452,7 +449,7 @@ public class CdmaConnection extends Connection {
 
         if (!disconnected) {
             doDisconnect();
-            if (false) Log.d(LOG_TAG,
+            if (false) Rlog.d(LOG_TAG,
                     "[CDMAConn] onDisconnect: cause=" + cause);
 
             owner.phone.notifyDisconnect(this);
@@ -469,7 +466,7 @@ public class CdmaConnection extends Connection {
     onLocalDisconnect() {
         if (!disconnected) {
             doDisconnect();
-            if (false) Log.d(LOG_TAG,
+            if (false) Rlog.d(LOG_TAG,
                     "[CDMAConn] onLoalDisconnect" );
 
             if (parent != null) {
@@ -606,7 +603,7 @@ public class CdmaConnection extends Connection {
        disconnected = true;
     }
 
-    private void
+    /*package*/ void
     onStartedHolding() {
         holdingStartTime = SystemClock.elapsedRealtime();
     }
@@ -680,7 +677,7 @@ public class CdmaConnection extends Connection {
          * and or onConnectedInOrOut.
          */
         if (mPartialWakeLock.isHeld()) {
-            Log.e(LOG_TAG, "[CdmaConn] UNEXPECTED; mPartialWakeLock is held when finalizing.");
+            Rlog.e(LOG_TAG, "[CdmaConn] UNEXPECTED; mPartialWakeLock is held when finalizing.");
         }
         releaseWakeLock();
     }
@@ -691,7 +688,7 @@ public class CdmaConnection extends Connection {
 
         if (postDialState == PostDialState.CANCELLED) {
             releaseWakeLock();
-            //Log.v("CDMA", "##### processNextPostDialChar: postDialState == CANCELLED, bail");
+            //Rlog.v("CDMA", "##### processNextPostDialChar: postDialState == CANCELLED, bail");
             return;
         }
 
@@ -717,7 +714,7 @@ public class CdmaConnection extends Connection {
                 // Will call processNextPostDialChar
                 h.obtainMessage(EVENT_NEXT_POST_DIAL).sendToTarget();
                 // Don't notify application
-                Log.e("CDMA", "processNextPostDialChar: c=" + c + " isn't valid!");
+                Rlog.e("CDMA", "processNextPostDialChar: c=" + c + " isn't valid!");
                 return;
             }
         }
@@ -937,7 +934,7 @@ public class CdmaConnection extends Connection {
     }
 
     private void log(String msg) {
-        Log.d(LOG_TAG, "[CDMAConn] " + msg);
+        Rlog.d(LOG_TAG, "[CDMAConn] " + msg);
     }
 
     @Override

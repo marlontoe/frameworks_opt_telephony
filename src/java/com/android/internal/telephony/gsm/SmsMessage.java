@@ -18,12 +18,12 @@ package com.android.internal.telephony.gsm;
 
 import android.telephony.PhoneNumberUtils;
 import android.text.format.Time;
-import android.util.Log;
+import android.telephony.Rlog;
 
 import com.android.internal.telephony.EncodeException;
 import com.android.internal.telephony.GsmAlphabet;
 import com.android.internal.telephony.GsmAlphabet.TextEncodingDetails;
-import com.android.internal.telephony.IccUtils;
+import com.android.internal.telephony.uicc.IccUtils;
 import com.android.internal.telephony.SmsHeader;
 import com.android.internal.telephony.SmsMessageBase;
 
@@ -105,7 +105,7 @@ public class SmsMessage extends SmsMessageBase {
             msg.parsePdu(pdu);
             return msg;
         } catch (RuntimeException ex) {
-            Log.e(LOG_TAG, "SMS PDU parsing failed: ", ex);
+            Rlog.e(LOG_TAG, "SMS PDU parsing failed: ", ex);
             return null;
         }
     }
@@ -133,7 +133,7 @@ public class SmsMessage extends SmsMessageBase {
             msg.parsePdu(IccUtils.hexStringToBytes(lines[1]));
             return msg;
         } catch (RuntimeException ex) {
-            Log.e(LOG_TAG, "SMS PDU parsing failed: ", ex);
+            Rlog.e(LOG_TAG, "SMS PDU parsing failed: ", ex);
             return null;
         }
     }
@@ -145,7 +145,7 @@ public class SmsMessage extends SmsMessageBase {
             msg.parsePdu(IccUtils.hexStringToBytes(line));
             return msg;
         } catch (RuntimeException ex) {
-            Log.e(LOG_TAG, "CDS SMS PDU parsing failed: ", ex);
+            Rlog.e(LOG_TAG, "CDS SMS PDU parsing failed: ", ex);
             return null;
         }
     }
@@ -170,7 +170,7 @@ public class SmsMessage extends SmsMessageBase {
             // or STORED_UNSENT
             // See TS 51.011 10.5.3
             if ((data[0] & 1) == 0) {
-                Log.w(LOG_TAG,
+                Rlog.w(LOG_TAG,
                         "SMS parsing failed: Trying to parse a free record");
                 return null;
             } else {
@@ -186,7 +186,7 @@ public class SmsMessage extends SmsMessageBase {
             msg.parsePdu(pdu);
             return msg;
         } catch (RuntimeException ex) {
-            Log.e(LOG_TAG, "SMS PDU parsing failed: ", ex);
+            Rlog.e(LOG_TAG, "SMS PDU parsing failed: ", ex);
             return null;
         }
     }
@@ -256,7 +256,7 @@ public class SmsMessage extends SmsMessageBase {
                     SmsHeader smsHeader = SmsHeader.fromByteArray(header);
                     if (smsHeader.languageTable != languageTable
                             || smsHeader.languageShiftTable != languageShiftTable) {
-                        Log.w(LOG_TAG, "Updating language table in SMS header: "
+                        Rlog.w(LOG_TAG, "Updating language table in SMS header: "
                                 + smsHeader.languageTable + " -> " + languageTable + ", "
                                 + smsHeader.languageShiftTable + " -> " + languageShiftTable);
                         smsHeader.languageTable = languageTable;
@@ -289,7 +289,7 @@ public class SmsMessage extends SmsMessageBase {
                 try {
                     userData = encodeUCS2(message, header);
                 } catch(UnsupportedEncodingException uex) {
-                    Log.e(LOG_TAG,
+                    Rlog.e(LOG_TAG,
                             "Implausible UnsupportedEncodingException ",
                             uex);
                     return null;
@@ -302,7 +302,7 @@ public class SmsMessage extends SmsMessageBase {
                 userData = encodeUCS2(message, header);
                 encoding = ENCODING_16BIT;
             } catch(UnsupportedEncodingException uex) {
-                Log.e(LOG_TAG,
+                Rlog.e(LOG_TAG,
                         "Implausible UnsupportedEncodingException ",
                         uex);
                 return null;
@@ -312,7 +312,7 @@ public class SmsMessage extends SmsMessageBase {
         if (encoding == ENCODING_7BIT) {
             if ((0xff & userData[0]) > MAX_USER_DATA_SEPTETS) {
                 // Message too long
-                Log.e(LOG_TAG, "Message too long (" + (0xff & userData[0]) + " septets)");
+                Rlog.e(LOG_TAG, "Message too long (" + (0xff & userData[0]) + " septets)");
                 return null;
             }
             // TP-Data-Coding-Scheme
@@ -327,7 +327,7 @@ public class SmsMessage extends SmsMessageBase {
         } else { // assume UCS-2
             if ((0xff & userData[0]) > MAX_USER_DATA_BYTES) {
                 // Message too long
-                Log.e(LOG_TAG, "Message too long (" + (0xff & userData[0]) + " bytes)");
+                Rlog.e(LOG_TAG, "Message too long (" + (0xff & userData[0]) + " bytes)");
                 return null;
             }
             // TP-Data-Coding-Scheme
@@ -411,7 +411,7 @@ public class SmsMessage extends SmsMessageBase {
         byte[] smsHeaderData = SmsHeader.toByteArray(smsHeader);
 
         if ((data.length + smsHeaderData.length + 1) > MAX_USER_DATA_BYTES) {
-            Log.e(LOG_TAG, "SMS data message may only contain "
+            Rlog.e(LOG_TAG, "SMS data message may only contain "
                     + (MAX_USER_DATA_BYTES - smsHeaderData.length - 1) + " bytes");
             return null;
         }
@@ -472,7 +472,7 @@ public class SmsMessage extends SmsMessageBase {
         if (statusReportRequested) {
             // Set TP-Status-Report-Request bit.
             mtiByte |= 0x20;
-            if (false) Log.d(LOG_TAG, "SMS status report requested");
+            if (false) Rlog.d(LOG_TAG, "SMS status report requested");
         }
         bo.write(mtiByte);
 
@@ -530,7 +530,7 @@ public class SmsMessage extends SmsMessageBase {
                     ret = PhoneNumberUtils
                             .calledPartyBCDToString(pdu, cur, len);
                 } catch (RuntimeException tr) {
-                    Log.d(LOG_TAG, "invalid SC address: ", tr);
+                    Rlog.d(LOG_TAG, "invalid SC address: ", tr);
                     ret = null;
                 }
             }
@@ -564,7 +564,7 @@ public class SmsMessage extends SmsMessageBase {
             try {
                 ret = new GsmSmsAddress(pdu, cur, lengthBytes);
             } catch (ParseException e) {
-                Log.e(LOG_TAG, e.getMessage());
+                Rlog.e(LOG_TAG, e.getMessage());
                 ret = null;
             }
 
@@ -738,7 +738,7 @@ public class SmsMessage extends SmsMessageBase {
                 ret = new String(pdu, cur, byteCount, "utf-16");
             } catch (UnsupportedEncodingException ex) {
                 ret = "";
-                Log.e(LOG_TAG, "implausible UnsupportedEncodingException", ex);
+                Rlog.e(LOG_TAG, "implausible UnsupportedEncodingException", ex);
             }
 
             cur += byteCount;
@@ -759,7 +759,7 @@ public class SmsMessage extends SmsMessageBase {
                 ret = new String(pdu, cur, byteCount, "KSC5601");
             } catch (UnsupportedEncodingException ex) {
                 ret = "";
-                Log.e(LOG_TAG, "implausible UnsupportedEncodingException", ex);
+                Rlog.e(LOG_TAG, "implausible UnsupportedEncodingException", ex);
             }
 
             cur += byteCount;
@@ -862,9 +862,8 @@ public class SmsMessage extends SmsMessageBase {
             // If the user data is a single space char, do not store
             // the message. Otherwise, store and display as usual
             if (" ".equals(getMessageBody())) {
-                ;
+                return true;
             }
-            return true;
         }
 
         return false;
@@ -898,15 +897,15 @@ public class SmsMessage extends SmsMessageBase {
      */
     private void parsePdu(byte[] pdu) {
         mPdu = pdu;
-        // Log.d(LOG_TAG, "raw sms message:");
-        // Log.d(LOG_TAG, s);
+        // Rlog.d(LOG_TAG, "raw sms message:");
+        // Rlog.d(LOG_TAG, s);
 
         PduParser p = new PduParser(pdu);
 
         scAddress = p.getSCAddress();
 
         if (scAddress != null) {
-            if (false) Log.d(LOG_TAG, "SMS SC address: " + scAddress);
+            if (false) Rlog.d(LOG_TAG, "SMS SC address: " + scAddress);
         }
 
         // TODO(mkf) support reply path, user data header indicator
@@ -923,6 +922,9 @@ public class SmsMessage extends SmsMessageBase {
         case 3: //GSM 03.40 9.2.3.1: MTI == 3 is Reserved.
                 //This should be processed in the same way as MTI == 0 (Deliver)
             parseSmsDeliver(p, firstByte);
+            break;
+        case 1:
+            parseSmsSubmit(p, firstByte);
             break;
         case 2:
             parseSmsStatusReport(p, firstByte);
@@ -992,7 +994,7 @@ public class SmsMessage extends SmsMessageBase {
         originatingAddress = p.getAddress();
 
         if (originatingAddress != null) {
-            if (false) Log.v(LOG_TAG, "SMS originating address: "
+            if (false) Rlog.v(LOG_TAG, "SMS originating address: "
                     + originatingAddress.address);
         }
 
@@ -1005,13 +1007,72 @@ public class SmsMessage extends SmsMessageBase {
         dataCodingScheme = p.getByte();
 
         if (false) {
-            Log.v(LOG_TAG, "SMS TP-PID:" + protocolIdentifier
+            Rlog.v(LOG_TAG, "SMS TP-PID:" + protocolIdentifier
                     + " data coding scheme: " + dataCodingScheme);
         }
 
         scTimeMillis = p.getSCTimestampMillis();
 
-        if (false) Log.d(LOG_TAG, "SMS SC timestamp: " + scTimeMillis);
+        if (false) Rlog.d(LOG_TAG, "SMS SC timestamp: " + scTimeMillis);
+
+        boolean hasUserDataHeader = (firstByte & 0x40) == 0x40;
+
+        parseUserData(p, hasUserDataHeader);
+    }
+
+    /**
+     * Parses a SMS-SUBMIT message.
+     *
+     * @param p A PduParser, cued past the first byte.
+     * @param firstByte The first byte of the PDU, which contains MTI, etc.
+     */
+    private void parseSmsSubmit(PduParser p, int firstByte) {
+        replyPathPresent = (firstByte & 0x80) == 0x80;
+
+        // TP-MR (TP-Message Reference)
+        messageRef = p.getByte();
+
+        recipientAddress = p.getAddress();
+
+        if (recipientAddress != null) {
+            if (false) Rlog.v(LOG_TAG, "SMS recipient address: "
+                    + recipientAddress.address);
+        }
+
+        // TP-Protocol-Identifier (TP-PID)
+        // TS 23.040 9.2.3.9
+        protocolIdentifier = p.getByte();
+
+        // TP-Data-Coding-Scheme
+        // see TS 23.038
+        dataCodingScheme = p.getByte();
+
+        if (false) {
+            Rlog.v(LOG_TAG, "SMS TP-PID:" + protocolIdentifier
+                    + " data coding scheme: " + dataCodingScheme);
+        }
+
+        // TP-Validity-Period-Format
+        int validityPeriodLength = 0;
+        int validityPeriodFormat = ((firstByte>>3) & 0x3);
+        if (0x0 == validityPeriodFormat) /* 00, TP-VP field not present*/
+        {
+            validityPeriodLength = 0;
+        }
+        else if (0x2 == validityPeriodFormat) /* 10, TP-VP: relative format*/
+        {
+            validityPeriodLength = 1;
+        }
+        else /* other case, 11 or 01, TP-VP: absolute or enhanced format*/
+        {
+            validityPeriodLength = 7;
+        }
+
+        // TP-Validity-Period is not used on phone, so just ignore it for now.
+        while (validityPeriodLength-- > 0)
+        {
+            p.getByte();
+        }
 
         boolean hasUserDataHeader = (firstByte & 0x40) == 0x40;
 
@@ -1039,7 +1100,7 @@ public class SmsMessage extends SmsMessageBase {
             hasMessageClass = (0 != (dataCodingScheme & 0x10));
 
             if (userDataCompressed) {
-                Log.w(LOG_TAG, "4 - Unsupported SMS data coding scheme "
+                Rlog.w(LOG_TAG, "4 - Unsupported SMS data coding scheme "
                         + "(compression) " + (dataCodingScheme & 0xff));
             } else {
                 switch ((dataCodingScheme >> 2) & 0x3) {
@@ -1053,7 +1114,7 @@ public class SmsMessage extends SmsMessageBase {
 
                 case 1: // 8 bit data
                 case 3: // reserved
-                    Log.w(LOG_TAG, "1 - Unsupported SMS data coding scheme "
+                    Rlog.w(LOG_TAG, "1 - Unsupported SMS data coding scheme "
                             + (dataCodingScheme & 0xff));
                     encodingType = ENCODING_8BIT;
                     break;
@@ -1098,7 +1159,7 @@ public class SmsMessage extends SmsMessageBase {
             } else {
                 isMwi = false;
 
-                Log.w(LOG_TAG, "MWI for fax, email, or other "
+                Rlog.w(LOG_TAG, "MWI for fax, email, or other "
                         + (dataCodingScheme & 0xff));
             }
         } else if ((dataCodingScheme & 0xC0) == 0x80) {
@@ -1108,11 +1169,11 @@ public class SmsMessage extends SmsMessageBase {
                 // This value used for KSC5601 by carriers in Korea.
                 encodingType = ENCODING_KSC5601;
             } else {
-                Log.w(LOG_TAG, "5 - Unsupported SMS data coding scheme "
+                Rlog.w(LOG_TAG, "5 - Unsupported SMS data coding scheme "
                         + (dataCodingScheme & 0xff));
             }
         } else {
-            Log.w(LOG_TAG, "3 - Unsupported SMS data coding scheme "
+            Rlog.w(LOG_TAG, "3 - Unsupported SMS data coding scheme "
                     + (dataCodingScheme & 0xff));
         }
 
@@ -1143,7 +1204,7 @@ public class SmsMessage extends SmsMessageBase {
             break;
         }
 
-        if (false) Log.v(LOG_TAG, "SMS message body (raw): '" + messageBody + "'");
+        if (false) Rlog.v(LOG_TAG, "SMS message body (raw): '" + messageBody + "'");
 
         if (messageBody != null) {
             parseMessageBody();

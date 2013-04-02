@@ -22,8 +22,6 @@ import com.android.internal.telephony.DataConnectionTracker;
 import com.android.internal.telephony.EventLogTags;
 import com.android.internal.telephony.IccCard;
 import com.android.internal.telephony.IccCardConstants;
-import com.android.internal.telephony.IccCardStatus;
-import com.android.internal.telephony.IccRecords;
 import com.android.internal.telephony.MccTable;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.RestrictedState;
@@ -31,10 +29,13 @@ import com.android.internal.telephony.RILConstants;
 import com.android.internal.telephony.ServiceStateTracker;
 import com.android.internal.telephony.TelephonyIntents;
 import com.android.internal.telephony.TelephonyProperties;
-import com.android.internal.telephony.UiccCard;
-import com.android.internal.telephony.UiccCardApplication;
-import com.android.internal.telephony.IccCardApplicationStatus.AppState;
+import com.android.internal.telephony.uicc.IccCardStatus;
+import com.android.internal.telephony.uicc.IccRecords;
+import com.android.internal.telephony.uicc.SIMRecords;
+import com.android.internal.telephony.uicc.UiccCard;
+import com.android.internal.telephony.uicc.UiccCardApplication;
 import com.android.internal.telephony.uicc.UiccController;
+import com.android.internal.telephony.uicc.IccCardApplicationStatus.AppState;
 
 import android.app.AlarmManager;
 import android.app.Notification;
@@ -65,7 +66,7 @@ import android.telephony.SignalStrength;
 import android.telephony.gsm.GsmCellLocation;
 import android.text.TextUtils;
 import android.util.EventLog;
-import android.util.Log;
+import android.telephony.Rlog;
 import android.util.TimeUtils;
 
 import java.io.FileDescriptor;
@@ -183,7 +184,7 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
     private ContentObserver mAutoTimeObserver = new ContentObserver(new Handler()) {
         @Override
         public void onChange(boolean selfChange) {
-            Log.i("GsmServiceStateTracker", "Auto time state changed");
+            Rlog.i("GsmServiceStateTracker", "Auto time state changed");
             revertToNitzTime();
         }
     };
@@ -191,7 +192,7 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
     private ContentObserver mAutoTimeZoneObserver = new ContentObserver(new Handler()) {
         @Override
         public void onChange(boolean selfChange) {
-            Log.i("GsmServiceStateTracker", "Auto time zone state changed");
+            Rlog.i("GsmServiceStateTracker", "Auto time zone state changed");
             revertToNitzTimeZone();
         }
     };
@@ -272,7 +273,7 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
         Message message;
 
         if (!phone.mIsTheCurrentActivePhone) {
-            Log.e(LOG_TAG, "Received message " + msg +
+            Rlog.e(LOG_TAG, "Received message " + msg +
                     "[" + msg.what + "] while being destroyed. Ignoring.");
             return;
         }
@@ -339,7 +340,7 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
                                 cid = Integer.parseInt(states[2], 16);
                             }
                         } catch (NumberFormatException ex) {
-                            Log.w(LOG_TAG, "error parsing location: " + ex);
+                            Rlog.w(LOG_TAG, "error parsing location: " + ex);
                         }
                     }
                     cellLoc.setLacAndCid(lac, cid);
@@ -1505,7 +1506,7 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
                     }
 
                     setAndBroadcastNetworkSetTime(c.getTimeInMillis());
-                    Log.i(LOG_TAG, "NITZ: after Setting time of day");
+                    Rlog.i(LOG_TAG, "NITZ: after Setting time of day");
                 }
                 SystemProperties.set("gsm.nitz.time", String.valueOf(c.getTimeInMillis()));
                 saveNitzTime(c.getTimeInMillis());
@@ -1704,16 +1705,16 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
     }
     @Override
     protected void log(String s) {
-        Log.d(LOG_TAG, "[GsmSST] " + s);
+        Rlog.d(LOG_TAG, "[GsmSST] " + s);
     }
 
     @Override
     protected void loge(String s) {
-        Log.e(LOG_TAG, "[GsmSST] " + s);
+        Rlog.e(LOG_TAG, "[GsmSST] " + s);
     }
 
     private static void sloge(String s) {
-        Log.e(LOG_TAG, "[GsmSST] " + s);
+        Rlog.e(LOG_TAG, "[GsmSST] " + s);
     }
 
     @Override

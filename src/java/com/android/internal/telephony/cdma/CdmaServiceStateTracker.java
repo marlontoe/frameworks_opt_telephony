@@ -28,9 +28,9 @@ import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.ServiceStateTracker;
 import com.android.internal.telephony.TelephonyIntents;
 import com.android.internal.telephony.TelephonyProperties;
-import com.android.internal.telephony.UiccCard;
-import com.android.internal.telephony.UiccCardApplication;
 import com.android.internal.telephony.CommandsInterface.RadioState;
+import com.android.internal.telephony.uicc.UiccCard;
+import com.android.internal.telephony.uicc.UiccCardApplication;
 import com.android.internal.telephony.uicc.UiccController;
 
 import android.app.AlarmManager;
@@ -57,7 +57,7 @@ import android.telephony.SignalStrength;
 import android.telephony.cdma.CdmaCellLocation;
 import android.text.TextUtils;
 import android.util.EventLog;
-import android.util.Log;
+import android.telephony.Rlog;
 import android.util.TimeUtils;
 
 import java.io.FileDescriptor;
@@ -1711,12 +1711,12 @@ public class CdmaServiceStateTracker extends ServiceStateTracker {
 
     @Override
     protected void log(String s) {
-        Log.d(LOG_TAG, "[CdmaSST] " + s);
+        Rlog.d(LOG_TAG, "[CdmaSST] " + s);
     }
 
     @Override
     protected void loge(String s) {
-        Log.e(LOG_TAG, "[CdmaSST] " + s);
+        Rlog.e(LOG_TAG, "[CdmaSST] " + s);
     }
 
     @Override

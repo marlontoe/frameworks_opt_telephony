@@ -30,11 +30,10 @@ import android.telephony.SmsCbLocation;
 import android.telephony.SmsCbMessage;
 import android.telephony.SmsManager;
 import android.telephony.gsm.GsmCellLocation;
-import android.util.Log;
+import android.telephony.Rlog;
 
 import com.android.internal.telephony.CommandsInterface;
 import com.android.internal.telephony.GsmAlphabet;
-import com.android.internal.telephony.IccUtils;
 import com.android.internal.telephony.PhoneBase;
 import com.android.internal.telephony.SmsConstants;
 import com.android.internal.telephony.SMSDispatcher;
@@ -43,6 +42,8 @@ import com.android.internal.telephony.SmsMessageBase;
 import com.android.internal.telephony.SmsStorageMonitor;
 import com.android.internal.telephony.SmsUsageMonitor;
 import com.android.internal.telephony.TelephonyProperties;
+import com.android.internal.telephony.uicc.IccUtils;
+import com.android.internal.telephony.uicc.UsimServiceTable;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -103,10 +104,10 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
         case EVENT_WRITE_SMS_COMPLETE:
             AsyncResult ar = (AsyncResult) msg.obj;
             if (ar.exception == null) {
-                Log.d(TAG, "Successfully wrote SMS-PP message to UICC");
+                Rlog.d(TAG, "Successfully wrote SMS-PP message to UICC");
                 mCm.acknowledgeLastIncomingGsmSms(true, 0, null);
             } else {
-                Log.d(TAG, "Failed to write SMS-PP message to UICC", ar.exception);
+                Rlog.d(TAG, "Failed to write SMS-PP message to UICC", ar.exception);
                 mCm.acknowledgeLastIncomingGsmSms(false,
                         CommandsInterface.GSM_SMS_FAIL_CAUSE_UNSPECIFIED_ERROR, null);
             }
@@ -160,7 +161,7 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
 
         // If sms is null, means there was a parsing error.
         if (smsb == null) {
-            Log.e(TAG, "dispatchMessage: message is null");
+            Rlog.e(TAG, "dispatchMessage: message is null");
             return Intents.RESULT_SMS_GENERIC_ERROR;
         }
 
@@ -169,7 +170,7 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
         if (sms.isTypeZero()) {
             // As per 3GPP TS 23.040 9.2.3.9, Type Zero messages should not be
             // Displayed/Stored/Notified. They should only be acknowledged.
-            Log.d(TAG, "Received short message type 0, Don't display or store it. Send Ack");
+            Rlog.d(TAG, "Received short message type 0, Don't display or store it. Send Ack");
             return Intents.RESULT_SMS_HANDLED;
         }
 
@@ -182,10 +183,10 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
             // records have been loaded, after the USIM service table has been loaded.
             if (ust != null && ust.isAvailable(
                     UsimServiceTable.UsimService.DATA_DL_VIA_SMS_PP)) {
-                Log.d(TAG, "Received SMS-PP data download, sending to UICC.");
+                Rlog.d(TAG, "Received SMS-PP data download, sending to UICC.");
                 return mDataDownloadHandler.startDataDownload(sms);
             } else {
-                Log.d(TAG, "DATA_DL_VIA_SMS_PP service not available, storing message to UICC.");
+                Rlog.d(TAG, "DATA_DL_VIA_SMS_PP service not available, storing message to UICC.");
                 String smsc = IccUtils.bytesToHexString(
                         PhoneNumberUtils.networkPortionToCalledPartyBCDWithLength(
                                 sms.getServiceCenterAddress()));
@@ -198,7 +199,7 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
 
         if (mSmsReceiveDisabled) {
             // Device doesn't support SMS service,
-            Log.d(TAG, "Received short message on device which doesn't support "
+            Rlog.d(TAG, "Received short message on device which doesn't support "
                     + "SMS service. Ignored.");
             return Intents.RESULT_SMS_HANDLED;
         }
@@ -209,13 +210,13 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
             mPhone.setVoiceMessageWaiting(1, -1);  // line 1: unknown number of msgs waiting
             handled = sms.isMwiDontStore();
             if (false) {
-                Log.d(TAG, "Received voice mail indicator set SMS shouldStore=" + !handled);
+                Rlog.d(TAG, "Received voice mail indicator set SMS shouldStore=" + !handled);
             }
         } else if (sms.isMWIClearMessage()) {
             mPhone.setVoiceMessageWaiting(1, 0);   // line 1: no msgs waiting
             handled = sms.isMwiDontStore();
             if (false) {
-                Log.d(TAG, "Received voice mail indicator clear SMS shouldStore=" + !handled);
+                Rlog.d(TAG, "Received voice mail indicator clear SMS shouldStore=" + !handled);
             }
         }
 
@@ -243,7 +244,7 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
             sendRawPdu(pdu.encodedScAddress, pdu.encodedMessage, sentIntent, deliveryIntent,
                     destAddr);
         } else {
-            Log.e(TAG, "GsmSMSDispatcher.sendData(): getSubmitPdu() returned null");
+            Rlog.e(TAG, "GsmSMSDispatcher.sendData(): getSubmitPdu() returned null");
         }
     }
 
@@ -257,7 +258,7 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
             sendRawPdu(pdu.encodedScAddress, pdu.encodedMessage, sentIntent, deliveryIntent,
                     destAddr);
         } else {
-            Log.e(TAG, "GsmSMSDispatcher.sendText(): getSubmitPdu() returned null");
+            Rlog.e(TAG, "GsmSMSDispatcher.sendText(): getSubmitPdu() returned null");
         }
     }
 
@@ -280,7 +281,7 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
             sendRawPdu(pdu.encodedScAddress, pdu.encodedMessage, sentIntent, deliveryIntent,
                     destinationAddress);
         } else {
-            Log.e(TAG, "GsmSMSDispatcher.sendNewSubmitPdu(): getSubmitPdu() returned null");
+            Rlog.e(TAG, "GsmSMSDispatcher.sendNewSubmitPdu(): getSubmitPdu() returned null");
         }
     }
 
@@ -293,6 +294,21 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
         byte pdu[] = (byte[]) map.get("pdu");
 
         Message reply = obtainMessage(EVENT_SEND_SMS_COMPLETE, tracker);
+
+        if (tracker.mRetryCount > 0) {
+            Rlog.d(TAG, "sendSms: "
+                    + " mRetryCount=" + tracker.mRetryCount
+                    + " mMessageRef=" + tracker.mMessageRef
+                    + " SS=" + mPhone.getServiceState().getState());
+
+            // per TS 23.040 Section 9.2.3.6:  If TP-MTI SMS-SUBMIT (0x01) type
+            //   TP-RD (bit 2) is 1 for retry
+            //   and TP-MR is set to previously failed sms TP-MR
+            if (((0x01 & pdu[0]) == 0x01)) {
+                pdu[0] |= 0x04; // TP-RD
+                pdu[1] = (byte) tracker.mMessageRef; // TP-MR
+            }
+        }
         mCm.sendSMS(IccUtils.bytesToHexString(smsc), IccUtils.bytesToHexString(pdu), reply);
     }
 
@@ -387,7 +403,7 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
                         }
                         sb.append(Integer.toHexString(b)).append(' ');
                     }
-                    Log.d(TAG, sb.toString());
+                    Rlog.d(TAG, sb.toString());
                 }
             }
 
@@ -473,7 +489,7 @@ public final class GsmSMSDispatcher extends SMSDispatcher {
                 }
             }
         } catch (RuntimeException e) {
-            Log.e(TAG, "Error in decoding SMS CB pdu", e);
+            Rlog.e(TAG, "Error in decoding SMS CB pdu", e);
         }
     }
 }

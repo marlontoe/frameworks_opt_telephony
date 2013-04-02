@@ -29,7 +29,7 @@ import android.telephony.TelephonyManager;
 import android.telephony.cdma.CdmaCellLocation;
 import android.text.TextUtils;
 import android.util.EventLog;
-import android.util.Log;
+import android.telephony.Rlog;
 
 import com.android.internal.telephony.ApnSetting;
 import com.android.internal.telephony.CommandsInterface;
@@ -41,11 +41,11 @@ import com.android.internal.telephony.DataConnectionTracker;
 import com.android.internal.telephony.DctConstants;
 import com.android.internal.telephony.EventLogTags;
 import com.android.internal.telephony.PhoneConstants;
-import com.android.internal.telephony.IccRecords;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.RetryManager;
 import com.android.internal.telephony.RILConstants;
-import com.android.internal.telephony.UiccCard;
+import com.android.internal.telephony.uicc.IccRecords;
+import com.android.internal.telephony.uicc.UiccCard;
 import com.android.internal.telephony.uicc.UiccController;
 import com.android.internal.util.AsyncChannel;
 
@@ -951,12 +951,12 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
 
     @Override
     protected void log(String s) {
-        Log.d(LOG_TAG, "[CdmaDCT] " + s);
+        Rlog.d(LOG_TAG, "[CdmaDCT] " + s);
     }
 
     @Override
     protected void loge(String s) {
-        Log.e(LOG_TAG, "[CdmaDCT] " + s);
+        Rlog.e(LOG_TAG, "[CdmaDCT] " + s);
     }
 
     @Override

@@ -20,7 +20,7 @@ import android.os.AsyncResult;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
+import android.telephony.Rlog;
 
 import com.android.internal.telephony.BaseCommands;
 import com.android.internal.telephony.CommandException;
@@ -28,6 +28,7 @@ import com.android.internal.telephony.CommandsInterface;
 import com.android.internal.telephony.DataCallState;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.UUSInfo;
+import com.android.internal.telephony.cdma.CdmaSmsBroadcastConfigInfo;
 import com.android.internal.telephony.gsm.CallFailCause;
 import com.android.internal.telephony.gsm.SmsBroadcastConfigInfo;
 import com.android.internal.telephony.gsm.SuppServiceNotification;
@@ -109,7 +110,7 @@ public final class SimulatedCommands extends BaseCommands
 
     public void supplyIccPin(String pin, Message result)  {
         if (mSimLockedState != SimLockState.REQUIRE_PIN) {
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPin: wrong state, state=" +
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPin: wrong state, state=" +
                     mSimLockedState);
             CommandException ex = new CommandException(
                     CommandException.Error.PASSWORD_INCORRECT);
@@ -119,7 +120,7 @@ public final class SimulatedCommands extends BaseCommands
         }
 
         if (pin != null && pin.equals(mPinCode)) {
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPin: success!");
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPin: success!");
             mPinUnlockAttempts = 0;
             mSimLockedState = SimLockState.NONE;
             mIccStatusChangedRegistrants.notifyRegistrants();
@@ -135,10 +136,10 @@ public final class SimulatedCommands extends BaseCommands
         if (result != null) {
             mPinUnlockAttempts ++;
 
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPin: failed! attempt=" +
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPin: failed! attempt=" +
                     mPinUnlockAttempts);
             if (mPinUnlockAttempts >= 3) {
-                Log.i(LOG_TAG, "[SimCmd] supplyIccPin: set state to REQUIRE_PUK");
+                Rlog.i(LOG_TAG, "[SimCmd] supplyIccPin: set state to REQUIRE_PUK");
                 mSimLockedState = SimLockState.REQUIRE_PUK;
             }
 
@@ -151,7 +152,7 @@ public final class SimulatedCommands extends BaseCommands
 
     public void supplyIccPuk(String puk, String newPin, Message result)  {
         if (mSimLockedState != SimLockState.REQUIRE_PUK) {
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPuk: wrong state, state=" +
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPuk: wrong state, state=" +
                     mSimLockedState);
             CommandException ex = new CommandException(
                     CommandException.Error.PASSWORD_INCORRECT);
@@ -161,7 +162,7 @@ public final class SimulatedCommands extends BaseCommands
         }
 
         if (puk != null && puk.equals(SIM_PUK_CODE)) {
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPuk: success!");
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPuk: success!");
             mSimLockedState = SimLockState.NONE;
             mPukUnlockAttempts = 0;
             mIccStatusChangedRegistrants.notifyRegistrants();
@@ -177,10 +178,10 @@ public final class SimulatedCommands extends BaseCommands
         if (result != null) {
             mPukUnlockAttempts ++;
 
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPuk: failed! attempt=" +
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPuk: failed! attempt=" +
                     mPukUnlockAttempts);
             if (mPukUnlockAttempts >= 10) {
-                Log.i(LOG_TAG, "[SimCmd] supplyIccPuk: set state to SIM_PERM_LOCKED");
+                Rlog.i(LOG_TAG, "[SimCmd] supplyIccPuk: set state to SIM_PERM_LOCKED");
                 mSimLockedState = SimLockState.SIM_PERM_LOCKED;
             }
 
@@ -193,7 +194,7 @@ public final class SimulatedCommands extends BaseCommands
 
     public void supplyIccPin2(String pin2, Message result)  {
         if (mSimFdnEnabledState != SimFdnState.REQUIRE_PIN2) {
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPin2: wrong state, state=" +
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPin2: wrong state, state=" +
                     mSimFdnEnabledState);
             CommandException ex = new CommandException(
                     CommandException.Error.PASSWORD_INCORRECT);
@@ -203,7 +204,7 @@ public final class SimulatedCommands extends BaseCommands
         }
 
         if (pin2 != null && pin2.equals(mPin2Code)) {
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPin2: success!");
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPin2: success!");
             mPin2UnlockAttempts = 0;
             mSimFdnEnabledState = SimFdnState.NONE;
 
@@ -218,10 +219,10 @@ public final class SimulatedCommands extends BaseCommands
         if (result != null) {
             mPin2UnlockAttempts ++;
 
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPin2: failed! attempt=" +
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPin2: failed! attempt=" +
                     mPin2UnlockAttempts);
             if (mPin2UnlockAttempts >= 3) {
-                Log.i(LOG_TAG, "[SimCmd] supplyIccPin2: set state to REQUIRE_PUK2");
+                Rlog.i(LOG_TAG, "[SimCmd] supplyIccPin2: set state to REQUIRE_PUK2");
                 mSimFdnEnabledState = SimFdnState.REQUIRE_PUK2;
             }
 
@@ -234,7 +235,7 @@ public final class SimulatedCommands extends BaseCommands
 
     public void supplyIccPuk2(String puk2, String newPin2, Message result)  {
         if (mSimFdnEnabledState != SimFdnState.REQUIRE_PUK2) {
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPuk2: wrong state, state=" +
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPuk2: wrong state, state=" +
                     mSimLockedState);
             CommandException ex = new CommandException(
                     CommandException.Error.PASSWORD_INCORRECT);
@@ -244,7 +245,7 @@ public final class SimulatedCommands extends BaseCommands
         }
 
         if (puk2 != null && puk2.equals(SIM_PUK2_CODE)) {
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPuk2: success!");
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPuk2: success!");
             mSimFdnEnabledState = SimFdnState.NONE;
             mPuk2UnlockAttempts = 0;
 
@@ -259,10 +260,10 @@ public final class SimulatedCommands extends BaseCommands
         if (result != null) {
             mPuk2UnlockAttempts ++;
 
-            Log.i(LOG_TAG, "[SimCmd] supplyIccPuk2: failed! attempt=" +
+            Rlog.i(LOG_TAG, "[SimCmd] supplyIccPuk2: failed! attempt=" +
                     mPuk2UnlockAttempts);
             if (mPuk2UnlockAttempts >= 10) {
-                Log.i(LOG_TAG, "[SimCmd] supplyIccPuk2: set state to SIM_PERM_LOCKED");
+                Rlog.i(LOG_TAG, "[SimCmd] supplyIccPuk2: set state to SIM_PERM_LOCKED");
                 mSimFdnEnabledState = SimFdnState.SIM_PERM_LOCKED;
             }
 
@@ -285,7 +286,7 @@ public final class SimulatedCommands extends BaseCommands
         }
 
         if (result != null) {
-            Log.i(LOG_TAG, "[SimCmd] changeIccPin: pin failed!");
+            Rlog.i(LOG_TAG, "[SimCmd] changeIccPin: pin failed!");
 
             CommandException ex = new CommandException(
                     CommandException.Error.PASSWORD_INCORRECT);
@@ -306,7 +307,7 @@ public final class SimulatedCommands extends BaseCommands
         }
 
         if (result != null) {
-            Log.i(LOG_TAG, "[SimCmd] changeIccPin2: pin2 failed!");
+            Rlog.i(LOG_TAG, "[SimCmd] changeIccPin2: pin2 failed!");
 
             CommandException ex = new CommandException(
                     CommandException.Error.PASSWORD_INCORRECT);
@@ -325,7 +326,7 @@ public final class SimulatedCommands extends BaseCommands
         resultSuccess(result, null);
 
         if (enable && mSsnNotifyOn) {
-            Log.w(LOG_TAG, "Supp Service Notifications already enabled!");
+            Rlog.w(LOG_TAG, "Supp Service Notifications already enabled!");
         }
 
         mSsnNotifyOn = enable;
@@ -344,7 +345,7 @@ public final class SimulatedCommands extends BaseCommands
             if (result != null) {
                 int[] r = new int[1];
                 r[0] = (mSimLockEnabled ? 1 : 0);
-                Log.i(LOG_TAG, "[SimCmd] queryFacilityLock: SIM is "
+                Rlog.i(LOG_TAG, "[SimCmd] queryFacilityLock: SIM is "
                         + (r[0] == 0 ? "unlocked" : "locked"));
                 AsyncResult.forMessage(result, r, null);
                 result.sendToTarget();
@@ -354,7 +355,7 @@ public final class SimulatedCommands extends BaseCommands
             if (result != null) {
                 int[] r = new int[1];
                 r[0] = (mSimFdnEnabled ? 1 : 0);
-                Log.i(LOG_TAG, "[SimCmd] queryFacilityLock: FDN is "
+                Rlog.i(LOG_TAG, "[SimCmd] queryFacilityLock: FDN is "
                         + (r[0] == 0 ? "disabled" : "enabled"));
                 AsyncResult.forMessage(result, r, null);
                 result.sendToTarget();
@@ -378,7 +379,7 @@ public final class SimulatedCommands extends BaseCommands
         if (facility != null &&
                 facility.equals(CommandsInterface.CB_FACILITY_BA_SIM)) {
             if (pin != null && pin.equals(mPinCode)) {
-                Log.i(LOG_TAG, "[SimCmd] setFacilityLock: pin is valid");
+                Rlog.i(LOG_TAG, "[SimCmd] setFacilityLock: pin is valid");
                 mSimLockEnabled = lockEnabled;
 
                 if (result != null) {
@@ -390,7 +391,7 @@ public final class SimulatedCommands extends BaseCommands
             }
 
             if (result != null) {
-                Log.i(LOG_TAG, "[SimCmd] setFacilityLock: pin failed!");
+                Rlog.i(LOG_TAG, "[SimCmd] setFacilityLock: pin failed!");
 
                 CommandException ex = new CommandException(
                         CommandException.Error.GENERIC_FAILURE);
@@ -402,7 +403,7 @@ public final class SimulatedCommands extends BaseCommands
         }  else if (facility != null &&
                 facility.equals(CommandsInterface.CB_FACILITY_BA_FD)) {
             if (pin != null && pin.equals(mPin2Code)) {
-                Log.i(LOG_TAG, "[SimCmd] setFacilityLock: pin2 is valid");
+                Rlog.i(LOG_TAG, "[SimCmd] setFacilityLock: pin2 is valid");
                 mSimFdnEnabled = lockEnabled;
 
                 if (result != null) {
@@ -414,7 +415,7 @@ public final class SimulatedCommands extends BaseCommands
             }
 
             if (result != null) {
-                Log.i(LOG_TAG, "[SimCmd] setFacilityLock: pin2 failed!");
+                Rlog.i(LOG_TAG, "[SimCmd] setFacilityLock: pin2 failed!");
 
                 CommandException ex = new CommandException(
                         CommandException.Error.GENERIC_FAILURE);
@@ -442,10 +443,10 @@ public final class SimulatedCommands extends BaseCommands
      */
     public void getCurrentCalls (Message result) {
         if ((mState == RadioState.RADIO_ON) && !isSimLocked()) {
-            //Log.i("GSM", "[SimCmds] getCurrentCalls");
+            //Rlog.i("GSM", "[SimCmds] getCurrentCalls");
             resultSuccess(result, simulatedCallState.getDriverCalls());
         } else {
-            //Log.i("GSM", "[SimCmds] getCurrentCalls: RADIO_OFF or SIM not ready!");
+            //Rlog.i("GSM", "[SimCmds] getCurrentCalls: RADIO_OFF or SIM not ready!");
             resultFail(result,
                 new CommandException(
                     CommandException.Error.RADIO_NOT_AVAILABLE));
@@ -557,10 +558,10 @@ public final class SimulatedCommands extends BaseCommands
         success = simulatedCallState.onChld('1', (char)('0'+gsmIndex));
 
         if (!success){
-            Log.i("GSM", "[SimCmd] hangupConnection: resultFail");
+            Rlog.i("GSM", "[SimCmd] hangupConnection: resultFail");
             resultFail(result, new RuntimeException("Hangup Error"));
         } else {
-            Log.i("GSM", "[SimCmd] hangupConnection: resultSuccess");
+            Rlog.i("GSM", "[SimCmd] hangupConnection: resultSuccess");
             resultSuccess(result, null);
         }
     }
@@ -942,22 +943,22 @@ public final class SimulatedCommands extends BaseCommands
     public void sendSMS (String smscPDU, String pdu, Message result) {unimplemented(result);}
 
     public void deleteSmsOnSim(int index, Message response) {
-        Log.d(LOG_TAG, "Delete message at index " + index);
+        Rlog.d(LOG_TAG, "Delete message at index " + index);
         unimplemented(response);
     }
 
     public void deleteSmsOnRuim(int index, Message response) {
-        Log.d(LOG_TAG, "Delete RUIM message at index " + index);
+        Rlog.d(LOG_TAG, "Delete RUIM message at index " + index);
         unimplemented(response);
     }
 
     public void writeSmsToSim(int status, String smsc, String pdu, Message response) {
-        Log.d(LOG_TAG, "Write SMS to SIM with status " + status);
+        Rlog.d(LOG_TAG, "Write SMS to SIM with status " + status);
         unimplemented(response);
     }
 
     public void writeSmsToRuim(int status, String pdu, Message response) {
-        Log.d(LOG_TAG, "Write SMS to RUIM with status " + status);
+        Rlog.d(LOG_TAG, "Write SMS to RUIM with status " + status);
         unimplemented(response);
     }
 
@@ -1321,7 +1322,7 @@ public final class SimulatedCommands extends BaseCommands
             }
             pausedResponses.clear();
         } else {
-            Log.e("GSM", "SimulatedCommands.resumeResponses < 0");
+            Rlog.e("GSM", "SimulatedCommands.resumeResponses < 0");
         }
     }
 
@@ -1365,44 +1366,44 @@ public final class SimulatedCommands extends BaseCommands
     // ***** Methods for CDMA support
     public void
     getDeviceIdentity(Message response) {
-        Log.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
+        Rlog.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
         unimplemented(response);
     }
 
     public void
     getCDMASubscription(Message response) {
-        Log.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
+        Rlog.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
         unimplemented(response);
     }
 
     public void
     setCdmaSubscriptionSource(int cdmaSubscriptionType, Message response) {
-        Log.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
+        Rlog.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
         unimplemented(response);
     }
 
     public void queryCdmaRoamingPreference(Message response) {
-        Log.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
+        Rlog.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
         unimplemented(response);
     }
 
     public void setCdmaRoamingPreference(int cdmaRoamingType, Message response) {
-        Log.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
+        Rlog.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
         unimplemented(response);
     }
 
     public void
     setPhoneType(int phoneType) {
-        Log.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
+        Rlog.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
     }
 
     public void getPreferredVoicePrivacy(Message result) {
-        Log.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
+        Rlog.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
         unimplemented(result);
     }
 
     public void setPreferredVoicePrivacy(boolean enable, Message result) {
-        Log.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
+        Rlog.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
         unimplemented(result);
     }
 
@@ -1417,7 +1418,7 @@ public final class SimulatedCommands extends BaseCommands
      * @param response is callback message
      */
     public void setTTYMode(int ttyMode, Message response) {
-        Log.w(LOG_TAG, "Not implemented in SimulatedCommands");
+        Rlog.w(LOG_TAG, "Not implemented in SimulatedCommands");
         unimplemented(response);
     }
 
@@ -1432,7 +1433,7 @@ public final class SimulatedCommands extends BaseCommands
      * @param response is callback message
      */
     public void queryTTYMode(Message response) {
-        Log.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
+        Rlog.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
         unimplemented(response);
     }
 
@@ -1440,7 +1441,7 @@ public final class SimulatedCommands extends BaseCommands
      * {@inheritDoc}
      */
     public void sendCDMAFeatureCode(String FeatureCode, Message response) {
-        Log.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
+        Rlog.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
         unimplemented(response);
     }
 
@@ -1448,7 +1449,7 @@ public final class SimulatedCommands extends BaseCommands
      * {@inheritDoc}
      */
     public void sendCdmaSms(byte[] pdu, Message response){
-       Log.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
+       Rlog.w(LOG_TAG, "CDMA not implemented in SimulatedCommands");
     }
 
     public void setCdmaBroadcastActivation(boolean activate, Message response) {
@@ -1461,9 +1462,8 @@ public final class SimulatedCommands extends BaseCommands
 
     }
 
-    public void setCdmaBroadcastConfig(int[] configValuesArray, Message response) {
+    public void setCdmaBroadcastConfig(CdmaSmsBroadcastConfigInfo[] configs, Message response) {
         unimplemented(response);
-
     }
 
     public void forceDataDormancy(Message response) {

@@ -23,14 +23,15 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.os.Registrant;
 import android.os.SystemClock;
-import android.util.Log;
+import android.telephony.Rlog;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.ServiceState;
 import android.text.TextUtils;
 
 import com.android.internal.telephony.*;
-import com.android.internal.telephony.IccCardApplicationStatus.AppState;
+import com.android.internal.telephony.uicc.UiccCardApplication;
 import com.android.internal.telephony.uicc.UiccController;
+import com.android.internal.telephony.uicc.IccCardApplicationStatus.AppState;
 
 /**
  * {@hide}
@@ -88,7 +89,6 @@ public class GsmConnection extends Connection {
     static final int EVENT_WAKE_LOCK_TIMEOUT = 4;
 
     //***** Constants
-    static final int PAUSE_DELAY_FIRST_MILLIS = 100;
     static final int PAUSE_DELAY_MILLIS = 3 * 1000;
     static final int WAKE_LOCK_TIMEOUT_MILLIS = 60*1000;
 
@@ -266,7 +266,7 @@ public class GsmConnection extends Connection {
 
     public void proceedAfterWaitChar() {
         if (postDialState != PostDialState.WAIT) {
-            Log.w(LOG_TAG, "GsmConnection.proceedAfterWaitChar(): Expected "
+            Rlog.w(LOG_TAG, "GsmConnection.proceedAfterWaitChar(): Expected "
                 + "getPostDialState() to be WAIT but was " + postDialState);
             return;
         }
@@ -278,7 +278,7 @@ public class GsmConnection extends Connection {
 
     public void proceedAfterWildChar(String str) {
         if (postDialState != PostDialState.WILD) {
-            Log.w(LOG_TAG, "GsmConnection.proceedAfterWaitChar(): Expected "
+            Rlog.w(LOG_TAG, "GsmConnection.proceedAfterWaitChar(): Expected "
                 + "getPostDialState() to be WILD but was " + postDialState);
             return;
         }
@@ -422,7 +422,7 @@ public class GsmConnection extends Connection {
             duration = SystemClock.elapsedRealtime() - connectTimeReal;
             disconnected = true;
 
-            if (false) Log.d(LOG_TAG,
+            if (false) Rlog.d(LOG_TAG,
                     "[GSMConn] onDisconnect: cause=" + cause);
 
             owner.phone.notifyDisconnect(this);
@@ -550,7 +550,7 @@ public class GsmConnection extends Connection {
         releaseWakeLock();
     }
 
-    private void
+    /*package*/ void
     onStartedHolding() {
         holdingStartTime = SystemClock.elapsedRealtime();
     }
@@ -565,24 +565,19 @@ public class GsmConnection extends Connection {
             owner.cm.sendDtmf(c, h.obtainMessage(EVENT_DTMF_DONE));
         } else if (c == PhoneNumberUtils.PAUSE) {
             // From TS 22.101:
-
-            // "The first occurrence of the "DTMF Control Digits Separator"
-            //  shall be used by the ME to distinguish between the addressing
-            //  digits (i.e. the phone number) and the DTMF digits...."
-
-            if (nextPostDialChar == 1) {
-                // The first occurrence.
-                // We don't need to pause here, but wait for just a bit anyway
-                h.sendMessageDelayed(h.obtainMessage(EVENT_PAUSE_DONE),
-                                            PAUSE_DELAY_FIRST_MILLIS);
-            } else {
-                // It continues...
-                // "Upon subsequent occurrences of the separator, the UE shall
-                //  pause again for 3 seconds (\u00B1 20 %) before sending any
-                //  further DTMF digits."
-                h.sendMessageDelayed(h.obtainMessage(EVENT_PAUSE_DONE),
-                                            PAUSE_DELAY_MILLIS);
-            }
+            // It continues...
+            // Upon the called party answering the UE shall send the DTMF digits
+            // automatically to the network after a delay of 3 seconds(± 20 %).
+            // The digits shall be sent according to the procedures and timing
+            // specified in 3GPP TS 24.008 [13]. The first occurrence of the
+            // "DTMF Control Digits Separator" shall be used by the ME to
+            // distinguish between the addressing digits (i.e. the phone number)
+            // and the DTMF digits. Upon subsequent occurrences of the
+            // separator,
+            // the UE shall pause again for 3 seconds (± 20 %) before sending
+            // any further DTMF digits.
+            h.sendMessageDelayed(h.obtainMessage(EVENT_PAUSE_DONE),
+                    PAUSE_DELAY_MILLIS);
         } else if (c == PhoneNumberUtils.WAIT) {
             setPostDialState(PostDialState.WAIT);
         } else if (c == PhoneNumberUtils.WILD) {
@@ -617,7 +612,7 @@ public class GsmConnection extends Connection {
          * and or onConnectedInOrOut.
          */
         if (mPartialWakeLock.isHeld()) {
-            Log.e(LOG_TAG, "[GSMConn] UNEXPECTED; mPartialWakeLock is held when finalizing.");
+            Rlog.e(LOG_TAG, "[GSMConn] UNEXPECTED; mPartialWakeLock is held when finalizing.");
         }
         releaseWakeLock();
     }
@@ -628,7 +623,7 @@ public class GsmConnection extends Connection {
         Registrant postDialHandler;
 
         if (postDialState == PostDialState.CANCELLED) {
-            //Log.v("GSM", "##### processNextPostDialChar: postDialState == CANCELLED, bail");
+            //Rlog.v("GSM", "##### processNextPostDialChar: postDialState == CANCELLED, bail");
             return;
         }
 
@@ -651,7 +646,7 @@ public class GsmConnection extends Connection {
                 // Will call processNextPostDialChar
                 h.obtainMessage(EVENT_NEXT_POST_DIAL).sendToTarget();
                 // Don't notify application
-                Log.e("GSM", "processNextPostDialChar: c=" + c + " isn't valid!");
+                Rlog.e("GSM", "processNextPostDialChar: c=" + c + " isn't valid!");
                 return;
             }
         }
@@ -671,7 +666,7 @@ public class GsmConnection extends Connection {
             // arg1 is the character that was/is being processed
             notifyMessage.arg1 = c;
 
-            //Log.v("GSM", "##### processNextPostDialChar: send msg to postDialHandler, arg1=" + c);
+            //Rlog.v("GSM", "##### processNextPostDialChar: send msg to postDialHandler, arg1=" + c);
             notifyMessage.sendToTarget();
         }
     }
@@ -753,7 +748,7 @@ public class GsmConnection extends Connection {
     }
 
     private void log(String msg) {
-        Log.d(LOG_TAG, "[GSMConn] " + msg);
+        Rlog.d(LOG_TAG, "[GSMConn] " + msg);
     }
 
     @Override
