@@ -1380,12 +1380,12 @@ public abstract class DataConnectionTracker extends Handler {
             // with an aggresive timeout.
             if (mIsScreenOn || suspectedStall || RecoveryAction.isAggressiveRecovery(nextAction)) {
                 delayInMs = Settings.Global.getInt(mResolver,
-                        Settings.Global.DATA_STALL_ALARM_AGGRESSIVE_DELAY_IN_MS,
-                        DATA_STALL_ALARM_AGGRESSIVE_DELAY_IN_MS_DEFAULT);
+                                           Settings.Global.DATA_STALL_ALARM_AGGRESSIVE_DELAY_IN_MS,
+                                           DATA_STALL_ALARM_AGGRESSIVE_DELAY_IN_MS_DEFAULT);
             } else {
                 delayInMs = Settings.Global.getInt(mResolver,
-                        Settings.Global.DATA_STALL_ALARM_NON_AGGRESSIVE_DELAY_IN_MS,
-                        DATA_STALL_ALARM_NON_AGGRESSIVE_DELAY_IN_MS_DEFAULT);
+                                           Settings.Global.DATA_STALL_ALARM_NON_AGGRESSIVE_DELAY_IN_MS,
+                                           DATA_STALL_ALARM_NON_AGGRESSIVE_DELAY_IN_MS_DEFAULT);
             }
 
             mDataStallAlarmTag += 1;
@@ -1394,7 +1394,7 @@ public abstract class DataConnectionTracker extends Handler {
                         " delay=" + (delayInMs / 1000) + "s");
             }
             AlarmManager am =
-                    (AlarmManager) mPhone.getContext().getSystemService(Context.ALARM_SERVICE);
+                (AlarmManager) mPhone.getContext().getSystemService(Context.ALARM_SERVICE);
 
             Intent intent = new Intent(getActionIntentDataStallAlarm());
             intent.putExtra(DATA_STALL_ALARM_TAG_EXTRA, mDataStallAlarmTag);

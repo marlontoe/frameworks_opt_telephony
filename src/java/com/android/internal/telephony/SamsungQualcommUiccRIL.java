@@ -27,10 +27,12 @@ import android.os.AsyncResult;
 import android.telephony.SignalStrength;
 import android.text.TextUtils;
 import android.util.Log;
+import android.telephony.PhoneNumberUtils;
 import com.android.internal.telephony.RILConstants;
 import com.android.internal.telephony.uicc.IccCardApplicationStatus; 
 import com.android.internal.telephony.uicc.IccCardStatus; 
 
+import java.util.Collections;
 import java.util.ArrayList;
 
 /**
@@ -232,6 +234,78 @@ public class SamsungQualcommUiccRIL extends QualcommSharedRIL implements Command
 
     @Override
     protected Object
+    responseCallList(Parcel p) {
+        if (mRilVersion < 7)
+            return super.responseCallList(p);
+
+        int num;
+        int voiceSettings;
+        ArrayList<DriverCall> response;
+        DriverCall dc;
+
+        num = p.readInt();
+        response = new ArrayList<DriverCall>(num);
+
+        for (int i = 0 ; i < num ; i++) {
+            dc = new DriverCall();
+
+            dc.state = DriverCall.stateFromCLCC(p.readInt());
+            dc.index = p.readInt();
+            dc.TOA = p.readInt();
+            dc.isMpty = (0 != p.readInt());
+            dc.isMT = (0 != p.readInt());
+            dc.als = p.readInt();
+            voiceSettings = p.readInt();
+            dc.isVoice = (0 == voiceSettings) ? false : true;
+            //Some Samsung magic data for Videocalls
+            // hack taken from smdk4210ril class
+            voiceSettings = p.readInt();
+            //printing it to cosole for later investigation
+            Log.d(LOG_TAG, "Samsung magic = " + voiceSettings);
+            dc.isVoicePrivacy = (0 != p.readInt());
+            dc.number = p.readString();
+            int np = p.readInt();
+            dc.numberPresentation = DriverCall.presentationFromCLIP(np);
+            dc.name = p.readString();
+            dc.namePresentation = p.readInt();
+            int uusInfoPresent = p.readInt();
+            if (uusInfoPresent == 1) {
+                dc.uusInfo = new UUSInfo();
+                dc.uusInfo.setType(p.readInt());
+                dc.uusInfo.setDcs(p.readInt());
+                byte[] userData = p.createByteArray();
+                dc.uusInfo.setUserData(userData);
+                riljLogv(String.format("Incoming UUS : type=%d, dcs=%d, length=%d",
+                                       dc.uusInfo.getType(), dc.uusInfo.getDcs(),
+                                       dc.uusInfo.getUserData().length));
+                riljLogv("Incoming UUS : data (string)="
+                         + new String(dc.uusInfo.getUserData()));
+                riljLogv("Incoming UUS : data (hex): "
+                         + IccUtils.bytesToHexString(dc.uusInfo.getUserData()));
+            } else {
+                riljLogv("Incoming UUS : NOT present!");
+            }
+
+            // Make sure there's a leading + on addresses with a TOA of 145
+            dc.number = PhoneNumberUtils.stringFromStringAndTOA(dc.number, dc.TOA);
+
+            response.add(dc);
+
+            if (dc.isVoicePrivacy) {
+                mVoicePrivacyOnRegistrants.notifyRegistrants();
+                riljLog("InCall VoicePrivacy is enabled");
+            } else {
+                mVoicePrivacyOffRegistrants.notifyRegistrants();
+                riljLog("InCall VoicePrivacy is disabled");
+            }
+        }
+
+        Collections.sort(response);
+
+        return response;
+    }
+    @Override
+    protected Object
     responseSignalStrength(Parcel p) {
         int numInts = 12;
         int response[];
@@ -295,17 +369,16 @@ public class SamsungQualcommUiccRIL extends QualcommSharedRIL implements Command
 
             // Translate number of bars into something SignalStrength.java can understand
             switch (num_bars) {
-                case 0  : response[8] = -1;   break; // map to 0 bars
-                case 1  : response[8] = -116; break; // map to 1 bar
-                case 2  : response[8] = -115; break; // map to 2 bars
-                case 3  : response[8] = -105; break; // map to 3 bars
-                case 4  : response[8] = -95;  break; // map to 4 bars
-                case 5  : response[8] = -85;  break; // map to 4 bars but give an extra 10 dBm
-                default : response[8] *= -1;  break; // no idea; just pass value through
+                case 0  : response[8] = 1;   break; // map to 0 bars
+                case 1  : response[8] = 116; break; // map to 1 bar
+                case 2  : response[8] = 115; break; // map to 2 bars
+                case 3  : response[8] = 105; break; // map to 3 bars
+                case 4  : response[8] = 95;  break; // map to 4 bars
+                case 5  : response[8] = 85;  break; // map to 4 bars but give an extra 10 dBm
+                default :                    break; // no idea; just pass value through
             }
         } else {
             response[7] &= 0xff;  // remove the Samsung number of bars field
-            response[8] *= -1;
         }
 
         Log.d(LOG_TAG, "responseSignalStength AFTER: mode=" + (mSignalbarCount ? "bars" : "raw") +

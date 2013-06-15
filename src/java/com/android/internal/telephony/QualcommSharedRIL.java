@@ -181,10 +181,12 @@ public class QualcommSharedRIL extends RIL implements CommandsInterface {
             ca.pin1_replaced = p.readInt();
             ca.pin1 = ca.PinStateFromRILInt(p.readInt());
             ca.pin2 = ca.PinStateFromRILInt(p.readInt());
-            p.readInt(); //remaining_count_pin1
-            p.readInt(); //remaining_count_puk1
-            p.readInt(); //remaining_count_pin2
-            p.readInt(); //remaining_count_puk2
+            if (!needsOldRilFeature("skippinpukcount")) {
+                p.readInt(); //remaining_count_pin1
+                p.readInt(); //remaining_count_puk1
+                p.readInt(); //remaining_count_pin2
+                p.readInt(); //remaining_count_puk2
+            }
             status.mApplications[i] = ca;
         }
         int appIndex = -1;
@@ -367,9 +369,6 @@ public class QualcommSharedRIL extends RIL implements CommandsInterface {
             if (i == 7 && response[i] == 99) {
                 response[i] = -1;
                 noLte = true;
-            }
-            if (i == 8 && !(noLte || oldRil)) {
-                response[i] *= -1;
             }
         }
         return new SignalStrength(response[0], response[1], response[2], response[3], response[4], response[5], response[6], response[7],response[8], response[9], response[10], response[11], true);
