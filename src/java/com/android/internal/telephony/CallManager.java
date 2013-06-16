@@ -469,7 +469,7 @@ public final class CallManager {
                         // other sound sources
                         : AudioManager.AUDIOFOCUS_GAIN_TRANSIENT;
 
-        if (VDBG) Log.d(LOG_TAG, "requestAudioFocus on STREAM_RING");
+        if (VDBG) Rlog.d(LOG_TAG, "requestAudioFocus on STREAM_RING");
         audioManager.requestAudioFocusForCall(AudioManager.STREAM_RING, hint);
     }
 
@@ -603,7 +603,7 @@ public final class CallManager {
                     context.getSystemService(Context.AUDIO_SERVICE);
             int currMode = audioManager.getMode();
             if ((currMode != AudioManager.MODE_IN_CALL) && !(ringingPhone instanceof SipPhone)) {
-                Log.d(LOG_TAG, "setAudioMode Setting audio mode from " +
+                Rlog.d(LOG_TAG, "setAudioMode Setting audio mode from " +
                         currMode + " to " + AudioManager.MODE_IN_CALL);
                 audioManager.setMode(AudioManager.MODE_IN_CALL);
                 mSpeedUpAudioForMtCall = true;
@@ -883,7 +883,7 @@ public final class CallManager {
                         || (fgCallState == Call.State.DISCONNECTED)));
 
         if (result == false) {
-            Log.d(LOG_TAG, "canDial serviceState=" + serviceState
+            Rlog.d(LOG_TAG, "canDial serviceState=" + serviceState
                     + " hasRingingCall=" + hasRingingCall
                     + " hasActiveCall=" + hasActiveCall
                     + " hasHoldingCall=" + hasHoldingCall

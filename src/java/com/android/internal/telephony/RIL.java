@@ -578,11 +578,11 @@ public class RIL extends BaseCommands implements CommandsInterface {
                     byte[] data = str.getBytes();
                     try {
                         mSocket.getOutputStream().write(data);
-                        Log.i(LOG_TAG, "Data sent!!");
+                        Rlog.i(LOG_TAG, "Data sent!!");
                     } catch (IOException ex) {
-                            Log.e(LOG_TAG, "IOException", ex);
+                            Rlog.e(LOG_TAG, "IOException", ex);
                     } catch (RuntimeException exc) {
-                        Log.e(LOG_TAG, "Uncaught exception ", exc);
+                        Rlog.e(LOG_TAG, "Uncaught exception ", exc);
                     }
                 }
 

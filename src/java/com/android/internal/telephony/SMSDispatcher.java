@@ -227,7 +227,7 @@ public abstract class SMSDispatcher extends Handler {
         mSmsSendDisabled = !SystemProperties.getBoolean(
                                 TelephonyProperties.PROPERTY_SMS_SEND, mSmsCapable);
         mSmsPseudoMultipart = SystemProperties.getBoolean("telephony.sms.pseudo_multipart", false);
-        Log.d(TAG, "SMSDispatcher: ctor mSmsCapable=" + mSmsCapable + " format=" + getFormat()
+        Rlog.d(TAG, "SMSDispatcher: ctor mSmsCapable=" + mSmsCapable + " format=" + getFormat()
                 + " mSmsReceiveDisabled=" + mSmsReceiveDisabled
                 + " mSmsSendDisabled=" + mSmsSendDisabled);
     }
