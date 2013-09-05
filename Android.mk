@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#enable build only if not using legacy telephony
+ifeq ($(TARGET_TELEPHONY_VARIANT),)
 # enable this build only when platform library is available
 ifeq ($(TARGET_BUILD_JAVA_SUPPORT_LEVEL),platform)
 
@@ -39,3 +41,4 @@ include $(BUILD_JAVA_LIBRARY)
 include $(call all-makefiles-under,$(LOCAL_PATH))
 
 endif # JAVA platform
+endif
