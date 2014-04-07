@@ -68,6 +68,7 @@ public final class RuimRecords extends IccRecords {
     private String mMin;
     private String mHomeSystemId;
     private String mHomeNetworkId;
+    private boolean mMSIMRecordeEnabled = false;
 
     @Override
     public String toString() {
@@ -426,6 +427,7 @@ public final class RuimRecords extends IccRecords {
             String operatorNumeric = getOperatorNumeric();
             if (operatorNumeric != null) {
                 if(operatorNumeric.length() <= 6) {
+                    mMSIMRecordeEnabled = true;
                     MccTable.updateMccMncConfiguration(mContext, operatorNumeric);
                 }
             }
@@ -720,9 +722,10 @@ public final class RuimRecords extends IccRecords {
         mRecordsRequested = true;
 
         if (DBG) log("fetchRuimRecords " + mRecordsToLoad);
-
-        mCi.getIMSIForApp(mParentApp.getAid(), obtainMessage(EVENT_GET_IMSI_DONE));
-        mRecordsToLoad++;
+        if (!mMSIMRecordeEnabled) {
+            mCi.getIMSIForApp(mParentApp.getAid(), obtainMessage(EVENT_GET_IMSI_DONE));
+            mRecordsToLoad++;
+        }
 
         mFh.loadEFTransparent(EF_ICCID,
                 obtainMessage(EVENT_GET_ICCID_DONE));
