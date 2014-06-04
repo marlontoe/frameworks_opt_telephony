@@ -1211,7 +1211,6 @@ public class SIMRecords extends IccRecords {
         }
     }
 
-                mAdnCache.reset();
     /**
      * Dispatch 3GPP format message to registrant ({@code GSMPhone} or {@code CDMALTEPhone})
      * to pass to the 3GPP SMS dispatcher for delivery.
