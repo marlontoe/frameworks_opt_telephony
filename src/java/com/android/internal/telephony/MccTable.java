@@ -169,6 +169,14 @@ public final class MccTable
     }
 
     /**
+     * backwards compatibility with stuff like telephony-msim
+     * @hide
+     */
+    public static void updateMccMncConfiguration(Context context, String mccmnc) {
+        updateMccMncConfiguration(context, mccmnc, false);
+    }
+
+    /**
      * Updates MCC and MNC device configuration information for application retrieving
      * correct version of resources.  If MCC is 0, MCC and MNC will be ignored (not set).
      * @param context Context to act on.
