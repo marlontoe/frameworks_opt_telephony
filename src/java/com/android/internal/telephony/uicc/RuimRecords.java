@@ -428,7 +428,7 @@ public final class RuimRecords extends IccRecords {
             if (operatorNumeric != null) {
                 if(operatorNumeric.length() <= 6) {
                     mMSIMRecordeEnabled = true;
-                    MccTable.updateMccMncConfiguration(mContext, operatorNumeric);
+                    MccTable.updateMccMncConfiguration(mContext, operatorNumeric, false);
                 }
             }
 
