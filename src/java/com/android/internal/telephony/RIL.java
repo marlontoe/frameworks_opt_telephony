@@ -531,6 +531,18 @@ public final class RIL extends BaseCommands implements CommandsInterface {
 
                 mSocket = s;
                 Rlog.i(RILJ_LOG_TAG, "Connected to '" + rilSocket + "' socket");
+                
+                String str = "SUB1";
+                Rlog.i(RILJ_LOG_TAG, "Sending SUB data : " + str);
+                byte[] data = str.getBytes();
+                try {
+                    mSocket.getOutputStream().write(data);
+                    Rlog.i(RILJ_LOG_TAG, "Data sent!!");
+                } catch (IOException ex) {
+                    Rlog.e(RILJ_LOG_TAG, "IOException", ex);
+                } catch (RuntimeException er) {
+                    Rlog.e(RILJ_LOG_TAG, "Uncaught exception ", er);
+                }
 
                 int length = 0;
                 try {
@@ -3554,15 +3566,15 @@ public final class RIL extends BaseCommands implements CommandsInterface {
         String strings[] = (String [])responseStrings(p);
         ArrayList<OperatorInfo> ret;
 
-        if (strings.length % 4 != 0) {
+        if (strings.length % 5 != 0) {
             throw new RuntimeException(
                 "RIL_REQUEST_QUERY_AVAILABLE_NETWORKS: invalid response. Got "
-                + strings.length + " strings, expected multible of 4");
+                + strings.length + " strings, expected multible of 5");
         }
 
-        ret = new ArrayList<OperatorInfo>(strings.length / 4);
+        ret = new ArrayList<OperatorInfo>(strings.length / 5);
 
-        for (int i = 0 ; i < strings.length ; i += 4) {
+        for (int i = 0 ; i < strings.length ; i += 5) {
             ret.add (
                 new OperatorInfo(
                     strings[i+0],
@@ -4305,11 +4317,13 @@ public final class RIL extends BaseCommands implements CommandsInterface {
      */
     @Override
     public void getCellInfoList(Message result) {
+        /*
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_GET_CELL_INFO_LIST, result);
 
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
 
         send(rr);
+        */
     }
 
     /**
@@ -4317,6 +4331,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
      */
     @Override
     public void setCellInfoListRate(int rateInMillis, Message response) {
+        /*
         if (RILJ_LOGD) riljLog("setCellInfoListRate: " + rateInMillis);
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_SET_UNSOL_CELL_INFO_LIST_RATE, response);
 
@@ -4326,10 +4341,12 @@ public final class RIL extends BaseCommands implements CommandsInterface {
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
 
         send(rr);
+        */
     }
 
     public void setInitialAttachApn(String apn, String protocol, int authType, String username,
             String password, Message result) {
+        /*
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_SET_INITIAL_ATTACH_APN, null);
 
         if (RILJ_LOGD) riljLog("Set RIL_REQUEST_SET_INITIAL_ATTACH_APN");
@@ -4345,6 +4362,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 + ", username:" + username + ", password:" + password);
 
         send(rr);
+        */
     }
 
     public void setDataProfile(DataProfile[] dps, Message result) {
