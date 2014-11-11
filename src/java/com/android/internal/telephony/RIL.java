@@ -564,19 +564,17 @@ public class RIL extends BaseCommands implements CommandsInterface {
 
                 mSocket = s;
                 Rlog.i(RILJ_LOG_TAG, "Connected to '" + rilSocket + "' socket");
-
-                /* Compatibility with qcom's DSDS (Dual SIM) stack */
-                if (needsOldRilFeature("qcomdsds")) {
-                    String str = "SUB1";
-                    byte[] data = str.getBytes();
-                    try {
-                        mSocket.getOutputStream().write(data);
-                        Rlog.i(RILJ_LOG_TAG, "Data sent!!");
-                    } catch (IOException ex) {
-                            Rlog.e(RILJ_LOG_TAG, "IOException", ex);
-                    } catch (RuntimeException exc) {
-                        Rlog.e(RILJ_LOG_TAG, "Uncaught exception ", exc);
-                    }
+                
+                String str = "SUB1";
+                Rlog.i(RILJ_LOG_TAG, "Sending SUB data : " + str);
+                byte[] data = str.getBytes();
+                try {
+                    mSocket.getOutputStream().write(data);
+                    Rlog.i(RILJ_LOG_TAG, "Data sent!!");
+                } catch (IOException ex) {
+                    Rlog.e(RILJ_LOG_TAG, "IOException", ex);
+                } catch (RuntimeException er) {
+                    Rlog.e(RILJ_LOG_TAG, "Uncaught exception ", er);
                 }
 
                 int length = 0;
@@ -3879,7 +3877,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
         return response;
     }
 
-    protected DataCallResponse getDataCallResponse(Parcel p, int version) {
+    private DataCallResponse getDataCallResponse(Parcel p, int version) {
         DataCallResponse dataCall = new DataCallResponse();
 
         dataCall.version = version;
@@ -4013,15 +4011,15 @@ public class RIL extends BaseCommands implements CommandsInterface {
         String strings[] = (String [])responseStrings(p);
         ArrayList<OperatorInfo> ret;
 
-        if (strings.length % mQANElements != 0) {
+        if (strings.length % 5 != 0) {
             throw new RuntimeException(
                 "RIL_REQUEST_QUERY_AVAILABLE_NETWORKS: invalid response. Got "
-                + strings.length + " strings, expected multiple of " + mQANElements);
+                + strings.length + " strings, expected multible of 5");
         }
 
-        ret = new ArrayList<OperatorInfo>(strings.length / mQANElements);
+        ret = new ArrayList<OperatorInfo>(strings.length / 5);
 
-        for (int i = 0 ; i < strings.length ; i += mQANElements) {
+        for (int i = 0 ; i < strings.length ; i += 5) {
             ret.add (
                 new OperatorInfo(
                     strings[i+0],
