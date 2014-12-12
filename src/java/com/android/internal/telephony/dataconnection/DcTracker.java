@@ -2464,10 +2464,12 @@ public final class DcTracker extends DcTrackerBase {
 
             apnContext.removeWaitingApn(apnContext.getApnSetting());
             if (DBG) {
-                log(String.format("onDataSetupComplete: WaitingApns.size=%d" +
-                        " WaitingApnsPermFailureCountDown=%d",
-                        apnContext.getWaitingApns().size(),
-                        apnContext.getWaitingApnsPermFailCount()));
+                if (apnContext.getWaitingApns() != null) {
+                    log(String.format("onDataSetupComplete: WaitingApns.size=%d" +
+                            " WaitingApnsPermFailureCountDown=%d",
+                            apnContext.getWaitingApns().size(),
+                            apnContext.getWaitingApnsPermFailCount()));
+                }
             }
             handleError = true;
         }
