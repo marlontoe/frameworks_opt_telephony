@@ -412,7 +412,11 @@ public class ModemBindingPolicyHandler extends Handler {
 
         //Get num of RATs supported for this NwMode on all Stacks
         for (int i = 0; i < mNumPhones; i++) {
-            numRatSupported[i] = getNumOfRatSupportedForNwMode(nwMode, mModemCapInfo[i]);
+            if (mModemCapInfo[i] == null) {
+                numRatSupported[i] = getNumOfRatSupportedForNwMode(nwMode, mModemCapInfo[i]);
+            } else {
+                numRatSupported[i] = 0;
+            }
             if (maxNumRatSupported < numRatSupported[i]) maxNumRatSupported = numRatSupported[i];
         }
 
