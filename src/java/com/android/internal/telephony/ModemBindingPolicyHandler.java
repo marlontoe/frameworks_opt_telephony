@@ -478,6 +478,11 @@ public class ModemBindingPolicyHandler extends Handler {
 
         logd("getNumOfRATsSupportedForNwMode: nwMode[" + nwMode +"] modemCaps = " + modemCaps);
 
+        if (modemCaps == null) {
+            loge("getNumOfRATsSupportedForNwMode: modemcaps was null. Aborting before nwMode handling");
+            return 0;
+        }
+
         //send result by ANDing corresponding NETWORK MASK and Modem Caps mask.
         switch (nwMode) {
             case RILConstants.NETWORK_MODE_WCDMA_PREF:
