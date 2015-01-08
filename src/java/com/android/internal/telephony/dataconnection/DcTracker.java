@@ -2496,12 +2496,10 @@ public final class DcTracker extends DcTrackerBase {
 
             apnContext.removeWaitingApn(apnContext.getApnSetting());
             if (DBG) {
-                if (apnContext.getWaitingApns() != null) {
-                    log(String.format("onDataSetupComplete: WaitingApns.size=%d" +
-                            " WaitingApnsPermFailureCountDown=%d",
-                            apnContext.getWaitingApns().size(),
-                            apnContext.getWaitingApnsPermFailCount()));
-                }
+                log(String.format("onDataSetupComplete: WaitingApns.size=%d" +
+                        " WaitingApnsPermFailureCountDown=%d",
+                        apnContext.getWaitingApns().size(),
+                        apnContext.getWaitingApnsPermFailCount()));
             }
             handleError = true;
         }
@@ -3116,8 +3114,6 @@ public final class DcTracker extends DcTrackerBase {
     }
 
     private String apnListToString (ArrayList<ApnSetting> apns) {
-        if (apns == null)
-            return "NULL";
         StringBuilder result = new StringBuilder();
         for (int i = 0, size = apns.size(); i < size; i++) {
             result.append('[')

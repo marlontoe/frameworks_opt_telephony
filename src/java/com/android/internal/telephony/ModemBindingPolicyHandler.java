@@ -412,11 +412,7 @@ public class ModemBindingPolicyHandler extends Handler {
 
         //Get num of RATs supported for this NwMode on all Stacks
         for (int i = 0; i < mNumPhones; i++) {
-            if (mModemCapInfo[i] == null) {
-                numRatSupported[i] = getNumOfRatSupportedForNwMode(nwMode, mModemCapInfo[i]);
-            } else {
-                numRatSupported[i] = 0;
-            }
+            numRatSupported[i] = getNumOfRatSupportedForNwMode(nwMode, mModemCapInfo[i]);
             if (maxNumRatSupported < numRatSupported[i]) maxNumRatSupported = numRatSupported[i];
         }
 
@@ -475,13 +471,11 @@ public class ModemBindingPolicyHandler extends Handler {
     private int getNumOfRatSupportedForNwMode(int nwMode,
             ModemCapabilityInfo modemCaps) {
         int supportedRatMaskForNwMode = 0;
-
-        logd("getNumOfRATsSupportedForNwMode: nwMode[" + nwMode +"] modemCaps = " + modemCaps);
-
-        if (modemCaps == null) {
-            loge("getNumOfRATsSupportedForNwMode: modemcaps was null. Aborting before nwMode handling");
-            return 0;
+        if (modemCaps == null){
+            loge("getNumOfRatSupportedForNwMode: nwMode[" + nwMode + "] modemCaps was NULL!");
+            return supportedRatMaskForNwMode;
         }
+        logd("getNumOfRATsSupportedForNwMode: nwMode[" + nwMode +"] modemCaps = " + modemCaps);
 
         //send result by ANDing corresponding NETWORK MASK and Modem Caps mask.
         switch (nwMode) {
