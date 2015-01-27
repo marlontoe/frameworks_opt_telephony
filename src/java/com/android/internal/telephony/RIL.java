@@ -4420,7 +4420,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
      */
     @Override
     public void iccOpenLogicalChannel(String AID, Message response) {
-        /*
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_SIM_OPEN_CHANNEL, response);
         rr.mParcel.writeString(AID);
 
@@ -4428,7 +4427,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
 
         send(rr);
-        */
     }
 
     /**
@@ -4436,7 +4434,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
      */
     @Override
     public void iccCloseLogicalChannel(int channel, Message response) {
-        /*
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_SIM_CLOSE_CHANNEL, response);
         rr.mParcel.writeInt(1);
         rr.mParcel.writeInt(channel);
@@ -4445,7 +4442,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
 
         send(rr);
-        */
     }
 
     /**
@@ -4478,7 +4474,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
      */
     private void iccTransmitApduHelper(int rilCommand, int channel, int cla,
             int instruction, int p1, int p2, int p3, String data, Message response) {
-        /*
         RILRequest rr = RILRequest.obtain(rilCommand, response);
         rr.mParcel.writeInt(channel);
         rr.mParcel.writeInt(cla);
@@ -4492,12 +4487,10 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
 
         send(rr);
-        */
     }
 
     @Override
     public void nvReadItem(int itemID, Message response) {
-        /*
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_NV_READ_ITEM, response);
 
         rr.mParcel.writeInt(itemID);
@@ -4506,12 +4499,10 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 + ' ' + itemID);
 
         send(rr);
-        */
     }
 
     @Override
     public void nvWriteItem(int itemID, String itemValue, Message response) {
-        /*
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_NV_WRITE_ITEM, response);
 
         rr.mParcel.writeInt(itemID);
@@ -4521,12 +4512,10 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 + ' ' + itemID + ": " + itemValue);
 
         send(rr);
-        */
     }
 
     @Override
     public void nvWriteCdmaPrl(byte[] preferredRoamingList, Message response) {
-        /*
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_NV_WRITE_CDMA_PRL, response);
 
         rr.mParcel.writeByteArray(preferredRoamingList);
@@ -4535,12 +4524,10 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 + " (" + preferredRoamingList.length + " bytes)");
 
         send(rr);
-        */
     }
 
     @Override
     public void nvResetConfig(int resetType, Message response) {
-        /*
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_NV_RESET_CONFIG, response);
 
         rr.mParcel.writeInt(1);
@@ -4550,6 +4537,5 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 + ' ' + resetType);
 
         send(rr);
-        */
     }
 }
