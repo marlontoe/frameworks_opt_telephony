@@ -4317,13 +4317,11 @@ public final class RIL extends BaseCommands implements CommandsInterface {
      */
     @Override
     public void getCellInfoList(Message result) {
-        /*
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_GET_CELL_INFO_LIST, result);
 
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
 
         send(rr);
-        */
     }
 
     /**
@@ -4331,7 +4329,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
      */
     @Override
     public void setCellInfoListRate(int rateInMillis, Message response) {
-        /*
         if (RILJ_LOGD) riljLog("setCellInfoListRate: " + rateInMillis);
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_SET_UNSOL_CELL_INFO_LIST_RATE, response);
 
@@ -4341,12 +4338,10 @@ public final class RIL extends BaseCommands implements CommandsInterface {
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
 
         send(rr);
-        */
     }
 
     public void setInitialAttachApn(String apn, String protocol, int authType, String username,
             String password, Message result) {
-        /*
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_SET_INITIAL_ATTACH_APN, null);
 
         if (RILJ_LOGD) riljLog("Set RIL_REQUEST_SET_INITIAL_ATTACH_APN");
@@ -4362,7 +4357,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 + ", username:" + username + ", password:" + password);
 
         send(rr);
-        */
     }
 
     public void setDataProfile(DataProfile[] dps, Message result) {
