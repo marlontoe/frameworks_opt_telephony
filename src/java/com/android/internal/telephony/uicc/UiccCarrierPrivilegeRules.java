@@ -219,8 +219,10 @@ public class UiccCarrierPrivilegeRules extends Handler {
         mRules = "";
 
         // Start loading the rules.
-        mUiccCard.iccOpenLogicalChannel(AID,
-            obtainMessage(EVENT_OPEN_LOGICAL_CHANNEL_DONE, null));
+        //mUiccCard.iccOpenLogicalChannel(AID,
+        //    obtainMessage(EVENT_OPEN_LOGICAL_CHANNEL_DONE, null));
+        mAccessRules = new ArrayList<AccessRule>();
+        updateState(STATE_LOADED);
     }
 
     /**
