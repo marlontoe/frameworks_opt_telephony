@@ -287,7 +287,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
     // Number of per-network elements expected in QUERY_AVAILABLE_NETWORKS's response.
     // 4 elements is default, but many RILs actually return 5, making it impossible to
     // divide the response array without prior knowledge of the number of elements.
-    protected int mQANElements = 4;
+    protected int mQANElements = 5;
 
     //***** Events
 
@@ -569,7 +569,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
                         + rilSocket + "' socket");
 
                 /* Compatibility with qcom's DSDS (Dual SIM) stack */
-                if (needsOldRilFeature("qcomdsds")) {
+                //if (needsOldRilFeature("qcomdsds")) {
                     String str = "SUB1";
                     byte[] data = str.getBytes();
                     try {
@@ -580,7 +580,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
                     } catch (RuntimeException exc) {
                         Rlog.e(RILJ_LOG_TAG, "Uncaught exception ", exc);
                     }
-                }
+                //}
 
                 int length = 0;
                 try {
