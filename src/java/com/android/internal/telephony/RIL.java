@@ -285,7 +285,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
     // Number of per-network elements expected in QUERY_AVAILABLE_NETWORKS's response.
     // 4 elements is default, but many RILs actually return 5, making it impossible to
     // divide the response array without prior knowledge of the number of elements.
-    protected int mQANElements = 4;
+    protected int mQANElements = 5;
 
     //***** Events
 
@@ -564,18 +564,20 @@ public class RIL extends BaseCommands implements CommandsInterface {
 
                 mSocket = s;
                 Rlog.i(RILJ_LOG_TAG, "Connected to '" + rilSocket + "' socket");
-                
-                String str = "SUB1";
-                Rlog.i(RILJ_LOG_TAG, "Sending SUB data : " + str);
-                byte[] data = str.getBytes();
-                try {
-                    mSocket.getOutputStream().write(data);
-                    Rlog.i(RILJ_LOG_TAG, "Data sent!!");
-                } catch (IOException ex) {
-                    Rlog.e(RILJ_LOG_TAG, "IOException", ex);
-                } catch (RuntimeException er) {
-                    Rlog.e(RILJ_LOG_TAG, "Uncaught exception ", er);
-                }
+
+                /* Compatibility with qcom's DSDS (Dual SIM) stack */
+                //if (needsOldRilFeature("qcomdsds")) {
+                    String str = "SUB1";
+                    byte[] data = str.getBytes();
+                    try {
+                        mSocket.getOutputStream().write(data);
+                        Rlog.i(RILJ_LOG_TAG, "Data sent!!");
+                    } catch (IOException ex) {
+                            Rlog.e(RILJ_LOG_TAG, "IOException", ex);
+                    } catch (RuntimeException exc) {
+                        Rlog.e(RILJ_LOG_TAG, "Uncaught exception ", exc);
+                    }
+                //}
 
                 int length = 0;
                 try {
@@ -3877,7 +3879,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
         return response;
     }
 
-    private DataCallResponse getDataCallResponse(Parcel p, int version) {
+    protected DataCallResponse getDataCallResponse(Parcel p, int version) {
         DataCallResponse dataCall = new DataCallResponse();
 
         dataCall.version = version;
@@ -4011,15 +4013,15 @@ public class RIL extends BaseCommands implements CommandsInterface {
         String strings[] = (String [])responseStrings(p);
         ArrayList<OperatorInfo> ret;
 
-        if (strings.length % 5 != 0) {
+        if (strings.length % mQANElements != 0) {
             throw new RuntimeException(
                 "RIL_REQUEST_QUERY_AVAILABLE_NETWORKS: invalid response. Got "
-                + strings.length + " strings, expected multible of 5");
+                + strings.length + " strings, expected multiple of " + mQANElements);
         }
 
-        ret = new ArrayList<OperatorInfo>(strings.length / 5);
+        ret = new ArrayList<OperatorInfo>(strings.length / mQANElements);
 
-        for (int i = 0 ; i < strings.length ; i += 5) {
+        for (int i = 0 ; i < strings.length ; i += mQANElements) {
             ret.add (
                 new OperatorInfo(
                     strings[i+0],
