@@ -26,13 +26,16 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.os.Registrant;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.telecom.Log;
 import android.telephony.DisconnectCause;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.Rlog;
+import android.text.TextUtils;
 
 import com.android.ims.ImsException;
 import com.android.ims.ImsStreamMediaProfile;
+import com.android.ims.internal.CallGroup;
 import com.android.internal.telephony.CallStateException;
 import com.android.internal.telephony.Connection;
 import com.android.internal.telephony.Phone;
@@ -49,8 +52,16 @@ public class ImsPhoneConnection extends Connection {
     private static final String LOG_TAG = "ImsPhoneConnection";
     private static final boolean DBG = true;
 
+    /**
+     * When enabled will not show merge button when we are not an owner of a conference
+     */
+    private static final String PROPERTY_ENABLE_RESTRICT_NON_OWNER_MERGE =
+            "persist.radio.restrict_merge";
+
+
     //***** Instance Variables
 
+    private Context mContext;
     private ImsPhoneCallTracker mOwner;
     private ImsPhoneCall mParent;
     private ImsCall mImsCall;
@@ -59,6 +70,9 @@ public class ImsPhoneConnection extends Connection {
     private boolean mDisconnected;
 
     private Bundle mCallExtras = null;
+
+    private boolean mMptyState = false;
+    private boolean mIsConferenceUri = false;
 
     /*
     int mIndex;          // index in ImsPhoneCallTracker.connections[], -1 if unassigned
@@ -116,10 +130,12 @@ public class ImsPhoneConnection extends Connection {
 
     /** This is probably an MT call */
     /*package*/
-    ImsPhoneConnection(Context context, ImsCall imsCall, ImsPhoneCallTracker ct, ImsPhoneCall parent) {
+    ImsPhoneConnection(Context context, ImsCall imsCall, ImsPhoneCallTracker ct,
+           ImsPhoneCall parent, boolean isUnknown, ImsPhoneCall.State state, String address) {
         createWakeLock(context);
         acquireWakeLock();
 
+        mContext = context;
         mOwner = ct;
         mHandler = new MyHandler(mOwner.getLooper());
         mImsCall = imsCall;
@@ -135,14 +151,9 @@ public class ImsPhoneConnection extends Connection {
             ImsCallProfile imsCallProfile = imsCall.getCallProfile();
             if (imsCallProfile != null) {
                 setVideoState(ImsCallProfile.getVideoStateFromImsCallProfile(imsCallProfile));
-
-                ImsStreamMediaProfile mediaProfile = imsCallProfile.mMediaProfile;
-                if (mediaProfile != null) {
-                    setAudioQuality(getAudioQualityFromMediaProfile(mediaProfile));
-                }
             }
 
-            // Determine if the current call have video capabilities.
+            // Determine if the current call has HD audio and video capabilities.
             try {
                 ImsCallProfile localCallProfile = imsCall.getLocalCallProfile();
                 if (localCallProfile != null) {
@@ -158,6 +169,10 @@ public class ImsPhoneConnection extends Connection {
 
                     setRemoteVideoCapable(isRemoteVideoCapable);
                 }
+                if (localCallProfile != null && remoteCallProfile != null) {
+                    setAudioQuality(getAudioQualityFromCallProfile(
+                            localCallProfile, remoteCallProfile));
+                }
             } catch (ImsException e) {
                 // No session, so cannot get local capabilities.
             }
@@ -166,14 +181,23 @@ public class ImsPhoneConnection extends Connection {
             mCnapNamePresentation = PhoneConstants.PRESENTATION_UNKNOWN;
         }
 
-        mIsIncoming = true;
         mCreateTime = System.currentTimeMillis();
         mUusInfo = null;
 
         //mIndex = index;
 
         mParent = parent;
-        mParent.attach(this, ImsPhoneCall.State.INCOMING);
+        mIsIncoming = !isUnknown;
+        if (isUnknown) {
+            mParent.attach(this, state);
+            mAddress = address;
+            mCnapName = address;
+            mCnapNamePresentation = PhoneConstants.PRESENTATION_ALLOWED;
+            mNumberPresentation = PhoneConstants.PRESENTATION_ALLOWED;
+        } else {
+            mParent.attach(this,
+                    (mIsIncoming? ImsPhoneCall.State.INCOMING: ImsPhoneCall.State.DIALING));
+        }
     }
 
     /** This is an MO call, created when dialing */
@@ -191,9 +215,11 @@ public class ImsPhoneConnection extends Connection {
                     TelephonyProperties.EXTRA_SKIP_SCHEMA_PARSING, false);
         }
 
+        mContext = context;
         mOwner = ct;
         mHandler = new MyHandler(mOwner.getLooper());
 
+        mIsConferenceUri = isConferenceUri;
         mDialString = dialString;
 
         if (isConferenceUri || isSkipSchemaParsing) {
@@ -247,7 +273,6 @@ public class ImsPhoneConnection extends Connection {
 
         return audioQuality;
     }
-
 
     @Override
     public String getOrigDialString(){
@@ -372,7 +397,7 @@ public class ImsPhoneConnection extends Connection {
     }
 
     /** Called when the connection has been disconnected */
-    /*package*/ boolean
+    public boolean
     onDisconnect(int cause) {
         Rlog.d(LOG_TAG, "onDisconnect: cause=" + cause);
         if (mCause != DisconnectCause.LOCAL) mCause = cause;
@@ -400,6 +425,7 @@ public class ImsPhoneConnection extends Connection {
             if (mImsCall != null) mImsCall.close();
             mImsCall = null;
         }
+        clearPostDialListeners();
         releaseWakeLock();
         return changed;
     }
@@ -436,7 +462,9 @@ public class ImsPhoneConnection extends Connection {
     private boolean
     processPostDialChar(char c) {
         if (PhoneNumberUtils.is12Key(c)) {
-            mOwner.mCi.sendDtmf(c, mHandler.obtainMessage(EVENT_DTMF_DONE));
+            if (mOwner != null) {
+                mOwner.sendDtmf(c, mHandler.obtainMessage(EVENT_DTMF_DONE));
+            }
         } else if (c == PhoneNumberUtils.PAUSE) {
             // From TS 22.101:
             // It continues...
@@ -480,6 +508,7 @@ public class ImsPhoneConnection extends Connection {
     @Override
     protected void finalize()
     {
+        clearPostDialListeners();
         releaseWakeLock();
     }
 
@@ -517,6 +546,9 @@ public class ImsPhoneConnection extends Connection {
             }
         }
 
+        notifyPostDialListenersNextChar(c);
+
+        // TODO: remove the following code since the handler no longer executes anything.
         postDialHandler = mOwner.mPhone.mPostDialHandler;
 
         Message notifyMessage;
@@ -555,6 +587,7 @@ public class ImsPhoneConnection extends Connection {
             releaseWakeLock();
         }
         mPostDialState = s;
+        notifyPostDialListeners();
     }
 
     private void
@@ -599,6 +632,27 @@ public class ImsPhoneConnection extends Connection {
         return mImsCall != null && mImsCall.isMultiparty();
     }
 
+    @Override
+    public boolean isMergeAllowed() {
+        /* Merge should be allowed if we are not conference OR
+         * while are conference and owner of it
+         */
+        if (!restrictedMergeFeatureEnabled()) {
+            return true;
+        }
+        if (mImsCall != null) {
+            if (mImsCall.isMultiparty()) {
+                CallGroup cg = mImsCall.getCallGroup();
+                if (cg == null && !mIsConferenceUri) {
+                    // CallGroup gets created when user merges calls
+                    // Hence if there is no CallGroup - we are not the owner
+                    // of conference call
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
     /*package*/ ImsCall getImsCall() {
         return mImsCall;
     }
@@ -611,18 +665,19 @@ public class ImsPhoneConnection extends Connection {
         mParent = parent;
     }
 
-    /*package*/ boolean
-    update(ImsCall imsCall, ImsPhoneCall.State state) {
+    /**
+     * @return {@code true} if the {@link ImsPhoneConnection} or its media capabilities have been
+     *     changed, and {@code false} otherwise.
+     */
+    /*package*/ boolean update(ImsCall imsCall, ImsPhoneCall.State state) {
         boolean changed = false;
 
         if (state == ImsPhoneCall.State.ACTIVE) {
-            if (mParent.getState().isRinging()
-                    || mParent.getState().isDialing()) {
+            if (mParent.getState().isRinging() || mParent.getState().isDialing()) {
                 onConnectedInOrOut();
             }
 
-            if (mParent.getState().isRinging()
-                    || mParent == mOwner.mBackgroundCall) {
+            if (mParent.getState().isRinging() || mParent == mOwner.mBackgroundCall) {
                 //mForegroundCall should be IDLE
                 //when accepting WAITING call
                 //before accept WAITING call,
@@ -636,7 +691,12 @@ public class ImsPhoneConnection extends Connection {
         }
 
         changed = mParent.update(this, imsCall, state);
+        return (update(imsCall) || changed);
+    }
 
+    /*package*/ boolean
+    update(ImsCall imsCall) {
+        boolean changed = false;
         if (imsCall != null) {
             // Check for a change in the video capabilities for the call and update the
             // {@link ImsPhoneConnection} with this information.
@@ -686,6 +746,44 @@ public class ImsPhoneConnection extends Connection {
             // {@link ImsCall} and update the {@link ImsPhoneConnection} with this information.
             ImsCallProfile callProfile = imsCall.getCallProfile();
             if (callProfile != null) {
+
+                String address = callProfile.getCallExtra(ImsCallProfile.EXTRA_OI);
+                String name = callProfile.getCallExtra(ImsCallProfile.EXTRA_CNA);
+                int nump = ImsCallProfile.OIRToPresentation(
+                        callProfile.getCallExtraInt(ImsCallProfile.EXTRA_OIR));
+                int namep = ImsCallProfile.OIRToPresentation(
+                        callProfile.getCallExtraInt(ImsCallProfile.EXTRA_CNAP));
+                if (Phone.DEBUG_PHONE) {
+                    Rlog.d(LOG_TAG, "address = " +  address + " name = " + name +
+                            " nump = " + nump + " namep = " + namep);
+                }
+
+                if ((mAddress == null && address != null) ||
+                        (mAddress != null && !mAddress.equals(address))) {
+                    mAddress = address;
+                    changed = true;
+                }
+
+                if (TextUtils.isEmpty(name)) {
+                    if (!TextUtils.isEmpty(mCnapName)) {
+                        mCnapName = "";
+                        changed = true;
+                    }
+                } else if (!name.equals(mCnapName)) {
+                    mCnapName = name;
+                    changed = true;
+                }
+
+                if (mNumberPresentation != nump) {
+                    mNumberPresentation = nump;
+                    changed = true;
+                }
+
+                if (mCnapNamePresentation != namep) {
+                    mCnapNamePresentation = namep;
+                    changed = true;
+                }
+
                 int oldVideoState = getVideoState();
                 int newVideoState = ImsCallProfile.getVideoStateFromImsCallProfile(callProfile);
 
@@ -694,16 +792,28 @@ public class ImsPhoneConnection extends Connection {
                     changed = true;
                 }
 
-                ImsStreamMediaProfile mediaProfile = callProfile.mMediaProfile;
-                if (mediaProfile != null) {
-                    int oldAudioQuality = getAudioQuality();
-                    int newAudioQuality = getAudioQualityFromMediaProfile(mediaProfile);
+                try {
+                    ImsCallProfile localCallProfile = imsCall.getLocalCallProfile();
+                    ImsCallProfile remoteCallProfile = imsCall.getRemoteCallProfile();
+                    if (localCallProfile != null && remoteCallProfile != null) {
+                        int oldAudioQuality = getAudioQuality();
+                        int newAudioQuality = getAudioQualityFromCallProfile(
+                                localCallProfile, remoteCallProfile);
 
-                    if (oldAudioQuality != newAudioQuality) {
-                        setAudioQuality(newAudioQuality);
-                        changed = true;
+                        if (oldAudioQuality != newAudioQuality) {
+                            setAudioQuality(newAudioQuality);
+                            changed = true;
+                        }
                     }
+                } catch (ImsException imsEx) {
+                    //TODO: Handle exception.
                 }
+            }
+
+            boolean mptyState = isMultiparty();
+            if (mptyState != mMptyState) {
+                changed = true;
+                mMptyState = mptyState;
             }
         }
         return changed;
@@ -716,6 +826,15 @@ public class ImsPhoneConnection extends Connection {
 
     public Bundle getCallExtras() {
         return mCallExtras;
+    }
+
+    private boolean restrictedMergeFeatureEnabled() {
+        if (SystemProperties.get(
+                PROPERTY_ENABLE_RESTRICT_NON_OWNER_MERGE, "false").equals("true")) {
+            return true;
+        }
+        return mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_restricted_merge);
     }
 
     /**
@@ -737,6 +856,83 @@ public class ImsPhoneConnection extends Connection {
             Rlog.e(LOG_TAG, "onDisconnectConferenceParticipant: no session in place. "+
                     "Failed to disconnect endpoint = " + endpoint);
         }
+    }
+
+    // NOTE: This method is not being used, but is part of AOSP. This may be used in
+    //       subsequent QC updates.
+    /**
+     * Check for a change in the video capabilities and audio quality for the {@link ImsCall}, and
+     * update the {@link ImsPhoneConnection} with this information.
+     *
+     * @param imsCall The call to check for changes in media capabilities.
+     * @return Whether the media capabilities have been changed.
+     */
+    private boolean updateMediaCapabilities(ImsCall imsCall) {
+        if (imsCall == null) {
+            return false;
+        }
+
+        boolean changed = false;
+
+        try {
+            ImsCallProfile localCallProfile = imsCall.getLocalCallProfile();
+            ImsCallProfile remoteCallProfile = imsCall.getRemoteCallProfile();
+
+            if (localCallProfile != null) {
+                int callType = localCallProfile.mCallType;
+
+                boolean newLocalVideoCapable = callType == ImsCallProfile.CALL_TYPE_VT;
+                if (isLocalVideoCapable() != newLocalVideoCapable) {
+                    setLocalVideoCapable(newLocalVideoCapable);
+                    changed = true;
+                }
+
+                // Method getVideoStateFromCallType is part of AOSP. We need to refactor
+                // it to internal implementation when moving to updateMediaCapabilities.
+                /*
+                int newVideoState = ImsCallProfile.getVideoStateFromCallType(callType);
+                if (getVideoState() != newVideoState) {
+                    setVideoState(newVideoState);
+                    changed = true;
+                }
+                */
+            }
+
+            int newAudioQuality =
+                    getAudioQualityFromCallProfile(localCallProfile, remoteCallProfile);
+            if (getAudioQuality() != newAudioQuality) {
+                setAudioQuality(newAudioQuality);
+                changed = true;
+            }
+        } catch (ImsException e) {
+            // No session in place -- no change
+        }
+
+        return changed;
+    }
+
+    /**
+     * Determines the {@link ImsPhoneConnection} audio quality based on the local and remote
+     * {@link ImsCallProfile}. If indicate a HQ audio call if the local stream profile
+     * indicates AMR_WB or EVRC_WB and there is no remote restrict cause.
+     *
+     * @param localCallProfile The local call profile.
+     * @param remoteCallProfile The remote call profile.
+     * @return The audio quality.
+     */
+    private int getAudioQualityFromCallProfile(
+            ImsCallProfile localCallProfile, ImsCallProfile remoteCallProfile) {
+        if (localCallProfile == null || remoteCallProfile == null
+                || localCallProfile.mMediaProfile == null) {
+            return AUDIO_QUALITY_STANDARD;
+        }
+
+        boolean isHighDef = (localCallProfile.mMediaProfile.mAudioQuality
+                        == ImsStreamMediaProfile.AUDIO_QUALITY_AMR_WB
+                || localCallProfile.mMediaProfile.mAudioQuality
+                        == ImsStreamMediaProfile.AUDIO_QUALITY_EVRC_WB)
+                && remoteCallProfile.mRestrictCause == ImsCallProfile.CALL_RESTRICT_CAUSE_NONE;
+        return isHighDef ? AUDIO_QUALITY_HIGH_DEFINITION : AUDIO_QUALITY_STANDARD;
     }
 
     /**

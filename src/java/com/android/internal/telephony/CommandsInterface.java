@@ -95,8 +95,12 @@ public interface CommandsInterface {
 
     // Numeric representation of string values returned
     // by messages sent to setOnUSSD handler
-    static final int USSD_MODE_NOTIFY       = 0;
-    static final int USSD_MODE_REQUEST      = 1;
+    static final int USSD_MODE_NOTIFY        = 0;
+    static final int USSD_MODE_REQUEST       = 1;
+    static final int USSD_MODE_NW_RELEASE    = 2;
+    static final int USSD_MODE_LOCAL_CLIENT  = 3;
+    static final int USSD_MODE_NOT_SUPPORTED = 4;
+    static final int USSD_MODE_NW_TIMEOUT    = 5;
 
     // GSM SMS fail cause for acknowledgeLastIncomingSMS. From TS 23.040, 9.2.3.22.
     static final int GSM_SMS_FAIL_CAUSE_MEMORY_CAPACITY_EXCEEDED    = 0xD3;
@@ -1972,13 +1976,6 @@ public interface CommandsInterface {
     public void requestShutdown(Message result);
 
     /**
-     * @hide
-     * CM-specific: Ask the RIL about the presence of back-compat flags
-     */
-    public boolean needsOldRilFeature(String feature);
-
-    /**
-     * @hide
      * Register/unregister for WWAN and IWLAN coexistence
      * notification.
      *
@@ -2011,6 +2008,11 @@ public interface CommandsInterface {
 
     /**
      * @hide
+     * CM-specific: Ask the RIL about the presence of back-compat flags
+     */
+    public boolean needsOldRilFeature(String feature);
+
+    /**
      * samsung stk service implementation - set up registrant for sending
      * sms send result from modem(RIL) to catService
      */

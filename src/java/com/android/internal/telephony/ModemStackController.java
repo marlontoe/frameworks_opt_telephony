@@ -39,10 +39,11 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.Registrant;
 import android.os.RegistrantList;
+import android.os.SystemProperties;
 import android.provider.Settings.SettingNotFoundException;
 import android.telephony.Rlog;
 import android.telephony.SubscriptionManager;
-import android.telephony.SubInfoRecord;
+import android.telephony.SubscriptionInfo;
 import android.telephony.TelephonyManager;
 
 import com.android.internal.telephony.CommandException;
@@ -50,7 +51,6 @@ import com.android.internal.telephony.CommandsInterface;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.RILConstants;
-import com.android.internal.telephony.Subscription.SubscriptionStatus;
 import com.android.internal.telephony.SubscriptionController;
 import com.android.internal.telephony.TelephonyIntents;
 import com.android.internal.telephony.RIL;
@@ -111,6 +111,17 @@ public class ModemStackController extends Handler {
                 + mMaxDataCap +"]";
         }
     };
+
+    /**
+     * Subscription activation status
+     */
+    public enum SubscriptionStatus {
+        SUB_DEACTIVATE,
+            SUB_ACTIVATE,
+            SUB_ACTIVATED,
+            SUB_DEACTIVATED,
+            SUB_INVALID
+    }
 
     //***** Events
     private static final int CMD_DEACTIVATE_ALL_SUBS = 1;
@@ -181,8 +192,8 @@ public class ModemStackController extends Handler {
                     mIsPhoneInEcbmMode = false;
                 }
             } else if (TelephonyIntents.ACTION_SUBINFO_CONTENT_CHANGE.equals(intent.getAction())) {
-                long subId = intent.getLongExtra(SubscriptionManager._ID,
-                        SubscriptionManager.INVALID_SUB_ID);
+                int subId = intent.getIntExtra(SubscriptionManager.UNIQUE_KEY_SUBSCRIPTION_ID,
+                        SubscriptionManager.INVALID_SUBSCRIPTION_ID);
                 String column = intent.getStringExtra(TelephonyIntents.EXTRA_COLUMN_NAME);
                 int intValue = intent.getIntExtra(TelephonyIntents.EXTRA_INT_CONTENT, 0);
                 logd("Received ACTION_SUBINFO_CONTENT_CHANGE on subId: " + subId
@@ -202,8 +213,8 @@ public class ModemStackController extends Handler {
                 }
             } else if (TelephonyIntents.ACTION_SUBSCRIPTION_SET_UICC_RESULT.
                     equals(intent.getAction())) {
-                long subId = intent.getLongExtra(PhoneConstants.SUBSCRIPTION_KEY,
-                        SubscriptionManager.INVALID_SUB_ID);
+                int subId = intent.getIntExtra(PhoneConstants.SUBSCRIPTION_KEY,
+                        SubscriptionManager.INVALID_SUBSCRIPTION_ID);
                 int phoneId = intent.getIntExtra(PhoneConstants.PHONE_KEY,
                         PhoneConstants.PHONE_ID1);
                 int status = intent.getIntExtra(TelephonyIntents.EXTRA_RESULT,
@@ -683,6 +694,8 @@ public class ModemStackController extends Handler {
             loge("No need to update Stack Binding in case of Single Sim.");
             return FAILURE;
         }
+        boolean isFlexmapDisabled = (SystemProperties.getInt(
+                "persist.radio.disable_flexmap", 0) == 1);
 
         if (callInProgress || mIsPhoneInEcbmMode || (!mIsStackReady && !isBootUp)) {
             loge("updateStackBinding: Calls is progress = " + callInProgress +
@@ -702,7 +715,7 @@ public class ModemStackController extends Handler {
             }
         }
 
-        if (isUpdateRequired) {
+        if (!isFlexmapDisabled && isUpdateRequired) {
             mIsStackReady = false;
             //Store the msg object , so that result of updateStackbinding can be sent later.
             mUpdateStackMsg = msg;
@@ -714,6 +727,7 @@ public class ModemStackController extends Handler {
                 triggerDeactivationOnAllSubs();
             }
         } else {
+            loge("updateStackBinding: FlexMap Disabled : " + isFlexmapDisabled);
             //incase of bootup if cross binding is not required send stack ready notification.
             if (isBootUp) notifyStackReady();
             return FAILURE;
@@ -723,15 +737,19 @@ public class ModemStackController extends Handler {
 
     private void deactivateAllSubscriptions() {
         SubscriptionController subCtrlr = SubscriptionController.getInstance();
-        List<SubInfoRecord> subInfoList = subCtrlr.getActiveSubInfoList();
+        List<SubscriptionInfo> subInfoList = subCtrlr.getActiveSubscriptionInfoList();
         mActiveSubCount = 0;
-        for (SubInfoRecord subInfo : subInfoList) {
-            int subStatus = subCtrlr.getSubState(subInfo.subId);
+        if (subInfoList == null) {
+            //if getting sub info list is failed, abort cross mapping process.
+            notifyStackReady();
+        }
+        for (SubscriptionInfo subInfo : subInfoList) {
+            int subStatus = subCtrlr.getSubState(subInfo.getSubscriptionId());
             if (subStatus == SubscriptionManager.ACTIVE) {
                 mActiveSubCount++;
-                subCtrlr.deactivateSubId(subInfo.subId);
+                subCtrlr.deactivateSubId(subInfo.getSubscriptionId());
             }
-            mSubcriptionStatus.put(subInfo.slotId, subStatus);
+            mSubcriptionStatus.put(subInfo.getSimSlotIndex(), subStatus);
         }
         if (mActiveSubCount > 0) {
             mDeactivedSubCount = 0;

@@ -40,6 +40,7 @@ import android.net.LinkProperties;
 import android.net.NetworkAgent;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.NetworkMisc;
 import android.net.ProxyInfo;
 import android.os.AsyncResult;
 import android.os.Build;
@@ -63,7 +64,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import java.net.InetAddress;
 import java.util.Collection;
 
@@ -427,7 +427,7 @@ public final class DataConnection extends StateMachine {
         int networkType = ss.getDataNetworkType();
         mNetworkInfo = new NetworkInfo(ConnectivityManager.TYPE_MOBILE,
                 networkType, NETWORK_TYPE, TelephonyManager.getNetworkTypeName(networkType));
-        mNetworkInfo.setRoaming(ss.getRoaming());
+        mNetworkInfo.setRoaming(ss.getDataRoaming());
         mNetworkInfo.setIsAvailable(true);
 
         addState(mDefaultState);
@@ -560,7 +560,7 @@ public final class DataConnection extends StateMachine {
         }
 
         String protocol;
-        if (mPhone.getServiceState().getRoaming()) {
+        if (mPhone.getServiceState().getDataRoaming()) {
             protocol = mApnSetting.roamingProtocol;
         } else {
             protocol = mApnSetting.protocol;
@@ -1039,9 +1039,8 @@ public final class DataConnection extends StateMachine {
             // Only change apn setting if it isn't set, it will
             // only NOT be set only if we're in DcInactiveState.
             mApnSetting = apnContext.getApnSetting();
-        } else if (mApnSetting.canHandleType(apnContext.getApnType())) {
-            // All is good.
-        } else {
+        }
+        if (mApnSetting == null || !mApnSetting.canHandleType(apnContext.getApnType())) {
             if (DBG) {
                 log("initConnection: incompatible apnSetting in ConnectionParams cp=" + cp
                         + " dc=" + DataConnection.this);
@@ -1081,9 +1080,9 @@ public final class DataConnection extends StateMachine {
             mPhone.getServiceStateTracker().registerForDataRegStateOrRatChanged(getHandler(),
                     DataConnection.EVENT_DATA_CONNECTION_DRS_OR_RAT_CHANGED, null);
 
-            mPhone.getServiceStateTracker().registerForRoamingOn(getHandler(),
+            mPhone.getServiceStateTracker().registerForDataRoamingOn(getHandler(),
                     DataConnection.EVENT_DATA_CONNECTION_ROAM_ON, null);
-            mPhone.getServiceStateTracker().registerForRoamingOff(getHandler(),
+            mPhone.getServiceStateTracker().registerForDataRoamingOff(getHandler(),
                     DataConnection.EVENT_DATA_CONNECTION_ROAM_OFF, null);
 
             // Add ourselves to the list of data connections
@@ -1096,8 +1095,8 @@ public final class DataConnection extends StateMachine {
             // Unregister for DRS or RAT change.
             mPhone.getServiceStateTracker().unregisterForDataRegStateOrRatChanged(getHandler());
 
-            mPhone.getServiceStateTracker().unregisterForRoamingOn(getHandler());
-            mPhone.getServiceStateTracker().unregisterForRoamingOff(getHandler());
+            mPhone.getServiceStateTracker().unregisterForDataRoamingOn(getHandler());
+            mPhone.getServiceStateTracker().unregisterForDataRoamingOff(getHandler());
 
             // Remove ourselves from the DC lists
             mDcController.removeDc(DataConnection.this);
@@ -1177,6 +1176,9 @@ public final class DataConnection extends StateMachine {
                     if (VDBG) log("REQ_SET_LINK_PROPERTIES_HTTP_PROXY proxy=" + proxy);
                     setLinkPropertiesHttpProxy(proxy);
                     mAc.replyToMessage(msg, DcAsyncChannel.RSP_SET_LINK_PROPERTIES_HTTP_PROXY);
+                    if (mNetworkAgent != null) {
+                        mNetworkAgent.sendLinkProperties(mLinkProperties);
+                    }
                     break;
                 }
                 case DcAsyncChannel.REQ_GET_NETWORK_CAPABILITIES: {
@@ -1761,10 +1763,12 @@ public final class DataConnection extends StateMachine {
                     mNetworkInfo.getReason(), null);
             mNetworkInfo.setExtraInfo(mApnSetting.apn);
             updateTcpBufferSizes(mRilRat);
+            final NetworkMisc misc = new NetworkMisc();
+            misc.subscriberId = mPhone.getSubscriberId();
             mNetworkAgent = new DcNetworkAgent(getHandler().getLooper(),
                     mPhone.getContext(),
                     "DcNetworkAgent" + mPhone.getSubId(), mNetworkInfo,
-                    makeNetworkCapabilities(), mLinkProperties, 50);
+                    makeNetworkCapabilities(), mLinkProperties, 50, misc);
         }
 
         @Override
@@ -1984,8 +1988,8 @@ public final class DataConnection extends StateMachine {
 
     private class DcNetworkAgent extends NetworkAgent {
         public DcNetworkAgent(Looper l, Context c, String TAG, NetworkInfo ni,
-                NetworkCapabilities nc, LinkProperties lp, int score) {
-            super(l, c, TAG, ni, nc, lp, score);
+                NetworkCapabilities nc, LinkProperties lp, int score, NetworkMisc misc) {
+            super(l, c, TAG, ni, nc, lp, score, misc);
         }
 
         protected void unwanted() {

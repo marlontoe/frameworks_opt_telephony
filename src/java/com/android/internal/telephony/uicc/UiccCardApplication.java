@@ -31,6 +31,7 @@ import com.android.internal.telephony.uicc.IccCardApplicationStatus.AppType;
 import com.android.internal.telephony.uicc.IccCardApplicationStatus.PersoSubState;
 import com.android.internal.telephony.uicc.IccCardStatus.PinState;
 import com.android.internal.telephony.uicc.UICCConfig;
+import com.android.internal.telephony.SubscriptionController;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -50,6 +51,7 @@ public class UiccCardApplication {
     private static final int EVENT_QUERY_FACILITY_LOCK_DONE = 6;
     private static final int EVENT_CHANGE_FACILITY_LOCK_DONE = 7;
     private static final int EVENT_PIN2_PUK2_DONE = 8;
+    private static final int EVENT_RADIO_UNAVAILABLE = 9;
 
     /**
      * These values are for authContext (parameter P2) per 3GPP TS 31.102 (Section 7.1.2)
@@ -111,6 +113,7 @@ public class UiccCardApplication {
             queryFdn();
             queryPin1State();
         }
+        mCi.registerForNotAvailable(mHandler, EVENT_RADIO_UNAVAILABLE, null);
     }
 
     void update (IccCardApplicationStatus as, Context c, CommandsInterface ci) {
@@ -170,6 +173,7 @@ public class UiccCardApplication {
             if (mIccFh != null) { mIccFh.dispose();}
             mIccRecords = null;
             mIccFh = null;
+            mCi.unregisterForNotAvailable(mHandler);
         }
     }
 
@@ -404,6 +408,10 @@ public class UiccCardApplication {
                 case EVENT_CHANGE_FACILITY_LOCK_DONE:
                     ar = (AsyncResult)msg.obj;
                     onChangeFacilityLock(ar);
+                    break;
+                case EVENT_RADIO_UNAVAILABLE:
+                    if (DBG) log("handleMessage (EVENT_RADIO_UNAVAILABLE)");
+                    mAppState = AppState.APPSTATE_UNKNOWN;
                     break;
                 default:
                     loge("Unknown Event " + msg.what);
@@ -892,6 +900,10 @@ public class UiccCardApplication {
         synchronized (mLock) {
             return mPin2State == PinState.PINSTATE_ENABLED_PERM_BLOCKED;
         }
+    }
+
+    public int getPhoneId() {
+        return mUiccCard.getPhoneId();
     }
 
     protected UiccCard getUiccCard() {
